@@ -1,0 +1,18 @@
+{
+  "format": "chat-exchange",
+  "format_version": "1.0",
+  "source": {"id": "sample:my-account", "name": "标准格式导入示例"},
+  "users": [
+    {"id": "me", "external_id": "import_demo_me", "nickname": "我（导入示例）", "avatar": null},
+    {"id": "zhang", "external_id": "import_demo_zhang", "nickname": "张三（导入示例）", "avatar": null}
+  ],
+  "chats": [
+    {"id": "chat1", "external_id": "private-me-zhang", "type": "private", "title": "导入示例", "participant_ids": ["me", "zhang"]}
+  ],
+  "messages": [
+    {"id": "m1", "sender_id": "me", "receiver_id": "zhang", "chat_id": "chat1", "timestamp": "2026-01-02T12:00:00+08:00", "type": "text", "content": "你好，这是 JSON 导入的记录。", "source_id": "export-1001"},
+    {"id": "m2", "sender_id": "zhang", "receiver_id": "me", "chat_id": "chat1", "timestamp": "2026-01-02T12:01:00+08:00", "type": "text", "content": "收到，下午三点开会。", "source_id": "export-1002"},
+    {"id": "m3", "sender_id": "me", "receiver_id": "zhang", "chat_id": "chat1", "timestamp": "2026-01-02T12:02:00+08:00", "type": "text", "content": "我会提前准备材料。", "source_id": "export-1003"}
+  ],
+  "media": []
+}

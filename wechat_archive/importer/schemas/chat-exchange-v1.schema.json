@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:wechat-archive:chat-exchange:1.0",
+  "title": "聊天交换格式 1.0",
+  "description": "结构协议含未来群聊和媒体预留。v0.3.0 运行能力为私聊文字、media=[]；引用、唯一标识和能力限制由 importer.validator 检查。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "format_version", "source", "users", "chats", "messages"],
+  "properties": {
+    "format": {"const": "chat-exchange"},
+    "format_version": {"const": "1.0"},
+    "source": {"$ref": "#/$defs/Source"},
+    "users": {"type": "array", "items": {"$ref": "#/$defs/User"}},
+    "chats": {"type": "array", "items": {"$ref": "#/$defs/Chat"}},
+    "messages": {"type": "array", "items": {"$ref": "#/$defs/Message"}},
+    "media": {"type": "array", "default": [], "items": {"$ref": "#/$defs/Media"}}
+  },
+  "$defs": {
+    "Id": {"type": "string", "minLength": 1, "pattern": "\\S", "description": "文件内稳定引用标识；与 SQLite 自增 ID 不同"},
+    "Text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "NullableText": {"anyOf": [{"$ref": "#/$defs/Text"}, {"type": "null"}]},
+    "Hash": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "Source": {
+      "type": "object", "additionalProperties": false, "required": ["id"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id", "description": "稳定来源命名空间，应区分平台和账号，不使用临时文件名"},
+        "name": {"$ref": "#/$defs/Text"},
+        "account_id": {"$ref": "#/$defs/Id"},
+        "metadata": {"type": "object", "description": "原始来源元数据；记录在导入报告中"}
+      }
+    },
+    "User": {
+      "type": "object", "additionalProperties": false, "required": ["id", "external_id", "nickname"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "external_id": {"$ref": "#/$defs/Id", "description": "跨文件稳定、全库唯一的身份；写入 users.wxid，必要时带平台/账号前缀"},
+        "nickname": {"$ref": "#/$defs/Text"},
+        "avatar": {"$ref": "#/$defs/NullableText", "description": "只保存标识或路径，不读取/下载"}
+      }
+    },
+    "Chat": {
+      "type": "object", "additionalProperties": false, "required": ["id", "type", "participant_ids"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "external_id": {"$ref": "#/$defs/Id"},
+        "type": {"enum": ["private", "group"], "description": "group 是未来预留，当前导入器拒绝"},
+        "title": {"$ref": "#/$defs/NullableText"},
+        "participant_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/Id"}}
+      },
+      "allOf": [{"if": {"properties": {"type": {"const": "private"}}}, "then": {"properties": {"participant_ids": {"maxItems": 2}}}}]
+    },
+    "Message": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "sender_id", "receiver_id", "chat_id", "timestamp", "type", "content"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "sender_id": {"$ref": "#/$defs/Id"},
+        "receiver_id": {"anyOf": [{"$ref": "#/$defs/Id"}, {"type": "null"}], "description": "群聊未来可为空；当前私聊必须为合法用户 ID"},
+        "chat_id": {"$ref": "#/$defs/Id"},
+        "timestamp": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$"},
+        "type": {"enum": ["text", "image", "video", "audio", "file", "system"], "description": "当前运行能力仅支持 text，其余为预留"},
+        "content": {"type": "string", "description": "text 必须非空；未来媒体消息允许空文字，保留原始空白、换行、Unicode"},
+        "media_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/Id"}, "default": [], "description": "引用顶层 Media.id；当前实现只接受空数组"},
+        "source_id": {"$ref": "#/$defs/NullableText"},
+        "source_hash": {"anyOf": [{"$ref": "#/$defs/Hash"}, {"type": "null"}], "description": "保留来源哈希；不替代内部去重哈希"}
+      },
+      "allOf": [{"if": {"properties": {"type": {"const": "text"}}}, "then": {"properties": {"content": {"$ref": "#/$defs/Text"}}}}]
+    },
+    "Media": {
+      "type": "object", "additionalProperties": false, "required": ["id", "type", "uri"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "type": {"enum": ["image", "video", "audio", "file"]},
+        "uri": {"$ref": "#/$defs/Text", "description": "未来媒体资源引用；当前不读取、不复制、不下载"},
+        "mime_type": {"$ref": "#/$defs/Text"},
+        "sha256": {"$ref": "#/$defs/Hash"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

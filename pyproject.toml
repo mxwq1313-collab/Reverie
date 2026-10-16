@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wechat-archive"
+version = "2.2.1"
+description = "思绪 · 本地聊天归档：真实 Windows 微信结构化导出接入和私聊文本导入"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["Pillow>=12.3,<13", "imageio-ffmpeg==0.6.0"]
+
+[project.scripts]
+wechat-archive = "wechat_archive.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["wechat_archive*"]
+
+[tool.setuptools.package-data]
+"wechat_archive.ui" = ["assets/*.json", "assets/*.txt"]
+"wechat_archive.database" = ["init.sql"]
+"wechat_archive.web" = ["static/*.html", "static/*.css", "static/*.js", "static/*.svg"]
+"wechat_archive.importer" = ["schemas/*.json"]
+"wechat_archive.migration" = ["sql/*.sql"]
+"wechat_archive.wechat_adapter" = ["README.md"]
+"wechat_archive.wechat_adapter.android" = ["README.md", "profiles/*.json"]
+"wechat_archive.wechat_adapter.backup" = ["README.md"]

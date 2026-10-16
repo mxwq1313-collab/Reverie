@@ -1,0 +1,3 @@
+Application logo: replacement original artwork supplied by the user for Sixu 2.1.1 on 2026-10-16.
+Original file SHA256: 5ea190068896b1b07cd420bdf6b560f52f2cd9bb9725c3280be9ec69be959090
+The complete original PNG is preserved in app_logo.json; runtime and Windows icon sizes are technical conversions only.

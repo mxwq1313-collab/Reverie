@@ -1,0 +1,18 @@
+{
+  "format": "wechat-mock",
+  "format_version": "1.0",
+  "timeUnit": "seconds",
+  "account": {"wxid": "wxid_mock_me", "nickname": "我（微信模拟）", "avatar": null},
+  "contacts": [
+    {"wxid": "wxid_mock_zhang", "nickname": "张三（微信模拟）", "avatar": null},
+    {"wxid": "wxid_mock_li", "nickname": "李四（微信模拟）", "avatar": null}
+  ],
+  "messages": [
+    {"msgId": "mock-1001", "talker": "wxid_mock_zhang", "isSend": 1, "createTime": 1767499200, "type": 1, "content": "你好，这是经过微信模拟适配器导入的记录。"},
+    {"msgId": "mock-1002", "talker": "wxid_mock_zhang", "isSend": 0, "createTime": 1767499260, "type": 1, "content": "收到，下午三点开会。"},
+    {"msgId": "mock-1003", "talker": "wxid_mock_zhang", "isSend": 1, "createTime": 1767499320, "type": 1, "content": "我会提前准备材料。"},
+    {"msgId": "mock-1004", "talker": "wxid_mock_li", "isSend": 0, "createTime": 1767502800, "type": 1, "content": "文件已经整理好了。"},
+    {"msgId": "mock-1005", "talker": "wxid_mock_li", "isSend": 1, "createTime": 1767502860, "type": 1, "content": "谢谢，我稍后查看。"}
+  ],
+  "metadata": {"fixture": true, "description": "虚构数据，不代表真实微信备份格式"}
+}

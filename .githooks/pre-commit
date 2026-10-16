@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+root=$(git rev-parse --show-toplevel)
+if [ -x "$root/.venv/Scripts/python.exe" ]; then
+    exec "$root/.venv/Scripts/python.exe" -X utf8 "$root/tools/git_privacy_check.py" --staged
+elif command -v python3 >/dev/null 2>&1; then
+    exec python3 -X utf8 "$root/tools/git_privacy_check.py" --staged
+elif command -v python >/dev/null 2>&1; then
+    exec python -X utf8 "$root/tools/git_privacy_check.py" --staged
+else
+    echo '提交已阻止：找不到 Python，请配置运行环境后执行隐私检查。' >&2
+    exit 1
+fi

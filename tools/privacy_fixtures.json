@@ -1,0 +1,12 @@
+{
+  "description": "经审查的既有自建样例；按 Git 索引规范化后的 blob 摘要登记，不含用户资料。",
+  "synthetic_files": {
+    "examples/chat_sample.json": "938a592506303cd29befc9e2e2dc4c0f0f27a752cf0ffe6ca4de9ceb6f92e5e6",
+    "examples/chat_empty.json": "43ac9938e94d9be20e4b9b845e93e6bef0b431b5e5244a083f94bc3b59b9e26c",
+    "examples/chat_sample.csv": "a0faaabbfde400ddea6efe4fba6ba3e11cdcc9a3eca8fe03f9b622c3940977bc",
+    "wechat_mock/export.json": "5ac28cae460cc7119dcf41f440acbffd9751a04d42d6f0763628b3fcfed4032f",
+    "wechat_mock/exchange.json": "c350841fbf4df2b1f8b8c61fef29006179d479a2c730368050250cfe00f647c1",
+    "examples/rmfh_backup/wxid_synthetic/device_synthetic/backup.attr": "becdef949b266ab951b751c3420ce1d854a3ac5a64b94fd994a49efe4cfcc9d4",
+    "examples/rmfh_backup/wxid_synthetic/device_synthetic/files/1/session_synthetic/ChatPackage/1767225600000-1767225600000": "4cc4b7be583a88c32c634c05b1354aa735a17638944d9acf00962b8a84b9a03c"
+  }
+}

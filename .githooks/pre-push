@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+if [ "${WECHAT_ARCHIVE_APPROVED_PUSH:-}" != "1" ]; then
+    echo '推送已阻止：本项目默认仅本地管理。先取得用户对具体远程/分支的明确批准。' >&2
+    exit 1
+fi
+# 用户当前规则禁止未经单独批准的删除或历史重写；常规批准仅允许快进。
+while read -r local_ref local_oid remote_ref remote_oid; do
+    case "$local_oid" in
+        0000000000000000000000000000000000000000|0000000000000000000000000000000000000000000000000000000000000000)
+            echo '推送已阻止：删除远程引用需另行明确批准，不由普通推送许可放行。' >&2
+            exit 1 ;;
+    esac
+    case "$remote_oid" in
+        0000000000000000000000000000000000000000|0000000000000000000000000000000000000000000000000000000000000000) ;;
+        *)
+            if ! git cat-file -e "$remote_oid^{commit}" 2>/dev/null || ! git merge-base --is-ancestor "$remote_oid" "$local_oid"; then
+                echo '推送已阻止：不是已核查的快进更新；请先核查历史与取得必要批准。' >&2
+                exit 1
+            fi ;;
+    esac
+done

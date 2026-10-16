@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="在本机浏览、搜索和回看自己的聊天归档。">
+  <title>思绪 · 本地聊天归档</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="/" aria-label="思绪首页">
+      <span class="brand-icon" aria-hidden="true">思</span>
+      <span><strong>思绪</strong><small>把对话留下，让回忆可寻</small></span>
+    </a>
+    <div class="header-actions">
+      <span class="local-indicator"><span class="status-dot"></span>本机运行</span>
+      <span id="mode" class="mode-badge">正在连接</span>
+      <button id="refresh" class="button button-quiet" type="button" title="刷新" aria-label="刷新">刷新</button>
+    </div>
+  </header>
+  <div id="connection-error" class="connection-error" role="alert" hidden></div>
+  <main class="workspace">
+    <aside class="sidebar" aria-label="联系人">
+      <div class="sidebar-heading">
+        <label class="field-label" for="identity">查看身份</label>
+        <select id="identity" disabled><option>正在加载…</option></select>
+        <div class="contacts-heading"><h1>联系人</h1><span id="contact-count">—</span></div>
+        <label class="sr-only" for="contact-search">搜索联系人</label>
+        <input id="contact-search" type="search" placeholder="搜索昵称或联系人标识" autocomplete="off">
+      </div>
+      <nav id="contacts" class="contacts" aria-label="联系人列表"></nav>
+      <button id="more-contacts" class="button more-contacts" type="button" hidden title="更多联系人" aria-label="更多联系人">更多联系人</button>
+      <footer class="sidebar-footer"><span class="archive-icon" aria-hidden="true">▤</span><span id="archive-stats">正在读取归档</span></footer>
+    </aside>
+    <section class="chat" aria-label="聊天浏览">
+      <header class="chat-heading">
+        <div id="chat-avatar" class="avatar avatar-large" aria-hidden="true">语</div>
+        <div class="chat-heading-text"><h2 id="chat-title">你的对话，在这里重逢</h2><p id="chat-subtitle">选择联系人，回看聊天记录</p></div>
+        <span class="read-only-badge">归档浏览</span>
+      </header>
+      <form id="filters" class="filters">
+        <div class="search-row">
+          <label class="sr-only" for="message-search">搜索聊天内容</label>
+          <input id="message-search" type="search" placeholder="输入关键词，查找聊天内容…" autocomplete="off">
+          <label class="sr-only" for="scope">搜索范围</label>
+          <select id="scope"><option value="current">当前聊天</option><option value="all">全部聊天</option></select>
+          <button id="apply" class="button button-primary" type="submit" title="搜索" aria-label="搜索">搜索</button>
+        </div>
+        <div class="date-row">
+          <div class="date-field"><label for="start-date">开始日期</label><input id="start-date" type="date"></div>
+          <span class="date-divider" aria-hidden="true">—</span>
+          <div class="date-field"><label for="end-date">结束日期</label><input id="end-date" type="date"></div>
+          <button id="clear-filters" class="button button-quiet" type="button" title="清除筛选" aria-label="清除筛选">清除筛选</button>
+          <span class="timezone-note">时间显示：北京时间</span>
+        </div>
+        <p id="filter-error" class="filter-error" role="alert" hidden></p>
+      </form>
+      <div class="results-strip"><span id="result-summary" role="status">正在读取记录…</span><span id="filter-state">按时间先后排列</span></div>
+      <div id="timeline" class="timeline" tabindex="0" aria-label="聊天记录滚动区域">
+        <div id="messages" class="messages" role="log" aria-label="聊天记录"></div>
+        <div id="empty-state" class="empty-state" hidden>
+          <div class="empty-symbol" aria-hidden="true">聊</div>
+          <h3 id="empty-title">这里还没有聊天记录</h3>
+          <p id="empty-description">选择左侧联系人，查看你们的对话。</p>
+          <button id="retry" class="button button-quiet" type="button" hidden title="重试" aria-label="重试">重试</button>
+        </div>
+      </div>
+      <footer class="chat-footer"><span id="page-info">—</span><button id="load-more" class="button" type="button" hidden title="加载更多消息" aria-label="加载更多消息">加载更多消息</button><span class="footer-note">只在你的电脑上浏览</span></footer>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{
+  "format": "chat-exchange",
+  "format_version": "1.0",
+  "source": {
+    "id": "wechat-mock:wxid_mock_me",
+    "name": "微信模拟导出",
+    "account_id": "wxid_mock_me",
+    "metadata": {
+      "adapter": "wechat-mock",
+      "mock_version": "1.0",
+      "time_unit": "seconds",
+      "original_metadata": {
+        "fixture": true,
+        "description": "虚构数据，不代表真实微信备份格式"
+      }
+    }
+  },
+  "users": [
+    {
+      "id": "wxid_mock_me",
+      "external_id": "wechat-mock:wxid_mock_me:wxid_mock_me",
+      "nickname": "我（微信模拟）",
+      "avatar": null
+    },
+    {
+      "id": "wxid_mock_zhang",
+      "external_id": "wechat-mock:wxid_mock_me:wxid_mock_zhang",
+      "nickname": "张三（微信模拟）",
+      "avatar": null
+    },
+    {
+      "id": "wxid_mock_li",
+      "external_id": "wechat-mock:wxid_mock_me:wxid_mock_li",
+      "nickname": "李四（微信模拟）",
+      "avatar": null
+    }
+  ],
+  "chats": [
+    {
+      "id": "chat:wxid_mock_zhang",
+      "external_id": "private:wxid_mock_zhang",
+      "type": "private",
+      "participant_ids": [
+        "wxid_mock_me",
+        "wxid_mock_zhang"
+      ]
+    },
+    {
+      "id": "chat:wxid_mock_li",
+      "external_id": "private:wxid_mock_li",
+      "type": "private",
+      "participant_ids": [
+        "wxid_mock_li",
+        "wxid_mock_me"
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "mock-1001",
+      "source_id": "mock-1001",
+      "sender_id": "wxid_mock_me",
+      "receiver_id": "wxid_mock_zhang",
+      "chat_id": "chat:wxid_mock_zhang",
+      "timestamp": "2026-01-04T04:00:00.000000Z",
+      "type": "text",
+      "content": "你好，这是经过微信模拟适配器导入的记录。"
+    },
+    {
+      "id": "mock-1002",
+      "source_id": "mock-1002",
+      "sender_id": "wxid_mock_zhang",
+      "receiver_id": "wxid_mock_me",
+      "chat_id": "chat:wxid_mock_zhang",
+      "timestamp": "2026-01-04T04:01:00.000000Z",
+      "type": "text",
+      "content": "收到，下午三点开会。"
+    },
+    {
+      "id": "mock-1003",
+      "source_id": "mock-1003",
+      "sender_id": "wxid_mock_me",
+      "receiver_id": "wxid_mock_zhang",
+      "chat_id": "chat:wxid_mock_zhang",
+      "timestamp": "2026-01-04T04:02:00.000000Z",
+      "type": "text",
+      "content": "我会提前准备材料。"
+    },
+    {
+      "id": "mock-1004",
+      "source_id": "mock-1004",
+      "sender_id": "wxid_mock_li",
+      "receiver_id": "wxid_mock_me",
+      "chat_id": "chat:wxid_mock_li",
+      "timestamp": "2026-01-04T05:00:00.000000Z",
+      "type": "text",
+      "content": "文件已经整理好了。"
+    },
+    {
+      "id": "mock-1005",
+      "source_id": "mock-1005",
+      "sender_id": "wxid_mock_me",
+      "receiver_id": "wxid_mock_li",
+      "chat_id": "chat:wxid_mock_li",
+      "timestamp": "2026-01-04T05:01:00.000000Z",
+      "type": "text",
+      "content": "谢谢，我稍后查看。"
+    }
+  ],
+  "media": []
+}

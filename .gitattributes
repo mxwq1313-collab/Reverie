@@ -1,0 +1,21 @@
+# 文本统一；Windows 兼容入口在检出时保持 CRLF
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.svg text eol=lf
+*.csv text eol=lf
+*.sql text eol=lf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+.githooks/* text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+examples/rmfh_backup/** -text
+# Markdown 的两个尾随空格用于硬换行；保留已验证代码的历史 EOF 空行
+*.md whitespace=-blank-at-eol
+wechat_archive/ui/operation_actions.py whitespace=-blank-at-eof

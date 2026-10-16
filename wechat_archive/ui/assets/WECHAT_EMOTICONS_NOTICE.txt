@@ -1,0 +1,7 @@
+Source: https://github.com/xxk8/wechat-emojis
+Package: wechat-emojis 1.0.1, author xxk8; package.json declares MIT.
+Upstream image notice (retained):
+表情图片版权归腾讯公司所有。非官方项目，与腾讯公司及微信团队无关。
+本项目仅供个人学习和非商业用途使用；任何商业用途请事先获得腾讯公司的授权。
+This local atlas contains only public built-in emoticons, never user stickers.
+Archive and individual asset SHA256 values are in wechat_emoticons.json.

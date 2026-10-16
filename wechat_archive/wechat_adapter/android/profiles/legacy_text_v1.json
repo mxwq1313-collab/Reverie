@@ -1,0 +1,21 @@
+{
+  "id": "enmicromsg-legacy-text-v1",
+  "time_unit": "milliseconds",
+  "minimum_timestamp": 946684800000,
+  "maximum_timestamp": 4133980800000,
+  "text_types": [1],
+  "unsupported_types": [3, 34, 42, 43, 47, 48, 49, 50, 62, 10000, 1048625, 436207665, 419430449, -1879048186, 822083633, 1090519089, 1040187441, 16777265],
+  "group_suffix": "@chatroom",
+  "contacts": {
+    "table": "rcontact",
+    "required": {"username":"TEXT", "nickname":"TEXT"},
+    "optional": {"conRemark":"TEXT"},
+    "fields": {"id":"username", "nickname":"nickname", "remark":"conRemark"}
+  },
+  "messages": {
+    "table": "message",
+    "required": {"msgId":"INTEGER", "createTime":"INTEGER", "talker":"TEXT", "isSend":"INTEGER", "type":"INTEGER", "content":"TEXT"},
+    "optional": {"msgSvrId":"INTEGER"},
+    "fields": {"id":"msgId", "server_id":"msgSvrId", "timestamp":"createTime", "talker":"talker", "is_send":"isSend", "type":"type", "content":"content"}
+  }
+}
