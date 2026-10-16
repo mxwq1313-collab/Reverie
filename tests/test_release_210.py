@@ -113,7 +113,7 @@ class Release210UI(unittest.TestCase):
     def test_logo_and_release_version_are_packaged_assets(self):
         from wechat_archive import __version__
         from wechat_archive.ui.app_logo import original,windows_icon
-        self.assertEqual(__version__,'2.2.1');self.assertTrue(original().startswith(b'\x89PNG'))
+        self.assertEqual(__version__,'2.2.2');self.assertTrue(original().startswith(b'\x89PNG'))
         icon=self.folder/'app.ico';windows_icon(icon)
         with Image.open(icon) as image:self.assertIn((256,256),image.info['sizes'])
         self.assertEqual(self.app.window_logo.width(),64);self.assertTrue(self.app.brand_label.cget('image'))

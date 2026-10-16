@@ -6,6 +6,7 @@ from .common_widgets import Collapsible
 from .theme import ACCENT,SECONDARY,PAPER
 from .rounded import RoundedSurface
 from .model_controls import AUTO_MODEL
+from .layout_config import configure_changed
 
 def build_configuration(panel):
     app=panel.app;root=panel.root;u=app.theme.u;page=app.settings_ai_codex
@@ -43,7 +44,10 @@ def build_compact(panel,page):
         owner=next((x['nickname'] for x in app.archive_users if x['id']==app.owner_id),'选择身份')
         peer=next((x['nickname'] for x in getattr(app,'contact_rows',[]) if x['id']==app.peer_id),'选择会话')
         value=owner+'  ›  '+(peer if panel.scope.get()=='当前会话' else '全部私聊') if app.controller.database else '选择归档会话'
-        value=app.theme.elide(value,max(u(120),page.winfo_width()-u(44)),True)
+        key=(value,max(u(120),page.winfo_width()-u(44)),app.theme.generation)
+        if key==getattr(panel,'scope_display_key',None):return
+        panel.scope_display_key=key
+        value=app.theme.elide(key[0],key[1],True)
         if panel.scope_summary.get()!=value:panel.scope_summary.set(value)
     panel.scope_text.trace_add('write',scope_display);scope_display()
     page.bind('<Configure>',lambda event:scope_display() if event.widget is page else None,add='+')
@@ -83,4 +87,4 @@ def build_compact(panel,page):
         if panel.retry_request and not recovery.winfo_manager():recovery.grid()
         elif not panel.retry_request and recovery.winfo_manager():recovery.grid_remove()
     panel.state.trace_add('write',update_hint);panel.gate_hint.trace_add('write',update_hint)
-    page.bind('<Configure>',lambda event:hint.configure(wraplength=max(u(160),event.width-u(20))) if event.widget is page else None,add='+');update_hint()
+    page.bind('<Configure>',lambda event:configure_changed(hint,wraplength=max(u(160),event.width-u(20))) if event.widget is page else None,add='+');update_hint()

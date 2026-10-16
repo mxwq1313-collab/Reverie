@@ -35,6 +35,7 @@ class BrowserMixin(AsyncBrowserMixin):
         self.chat_title=tk.StringVar(self.root,value='聊天归档');self.chat_subtitle=tk.StringVar(self.root,value='私聊消息')
         self.chat_title_label=ttk.Label(header,font=self.theme.section);self.chat_title_label.grid(row=0,column=0,sticky='w')
         self.chat_title.trace_add('write',lambda *_:self.fit_chat_title())
+        self.chat_header.bind('<Configure>',lambda _:self.fit_chat_title(),add='+')
         ttk.Label(header,textvariable=self.chat_subtitle,style='Hint.TLabel').grid(row=1,column=0,sticky='w',pady=(u(3),0))
         self.conversation_export_button=self.button(header,'导出',lambda:self.prepare_export('当前会话'))
         self.conversation_export_button.configure(style='Quiet.TButton',width=-3)
@@ -75,7 +76,11 @@ class BrowserMixin(AsyncBrowserMixin):
         if width<5:width=self.theme.u(600)
         actions=self.conversation_export_button.winfo_reqwidth()
         room=max(self.theme.u(40),width-actions-self.theme.u(40))
-        self.chat_title_label.configure(text=self.theme.elide(self.chat_title.get(),room,renderer=self.theme.section_font))
+        key=(self.chat_title.get(),room,self.theme.generation)
+        if key==getattr(self,'chat_title_fit_key',None):return
+        self.chat_title_fit_key=key
+        from .layout_config import configure_changed
+        configure_changed(self.chat_title_label,text=self.theme.elide(key[0],room,renderer=self.theme.section_font))
 
     def show_browser_state(self,kind,error=''):
         self.message_rows=[];self.message_total=0;self.loaded_offset=0;self.more_button.configure(state='disabled')

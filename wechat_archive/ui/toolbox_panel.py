@@ -24,6 +24,7 @@ class ToolboxPanel:
         frame=ttk.Frame(parent);frame.pack(fill='both',expand=True);self.views[name]=frame
         if name=='随机回忆':return frame
         ttk.Label(frame,text=name,font=app.theme.section).pack(anchor='w',pady=(0,app.theme.u(8)))
+        if name=='文字小工坊':return frame
         ttk.Label(frame,text=hint,style='Hint.TLabel',wraplength=app.theme.u(450)).pack(anchor='w',pady=(0,app.theme.u(8)))
         return frame
 
@@ -283,23 +284,37 @@ class TextWorkshop:
         self.box=box;self.app=app=box.app;u=app.theme.u
         page=box.frame('文字小工坊','整理手边的文字，可撤销、可保存；归档原文保持完整。')
         actions=ActionRow(page,app.theme)
-        for label,command in (('取当前选中文字',self.take_selection),('打开文本文件',self.load),('保存为文本',self.save),('复制整理结果',self.copy)):
+        for label,command in (('取当前选中文字',self.take_selection),('打开文本文件',self.load),('保存为文本',self.save),('复制整理结果',self.copy),('查找与替换',self.open_find)):
             actions.add(app.button(actions,label,command))
         self.text=ScrolledText(page,height=7,wrap='word',font=app.theme.body,undo=True,maxundo=100,autoseparators=True)
         app.theme.text_surface(self.text,editable=True,framed=True);self.text.pack(fill='both',expand=True,pady=u(10))
-        self.metrics=tk.StringVar(page);ttk.Label(page,textvariable=self.metrics,style='Hint.TLabel').pack(anchor='w')
+        self.metrics=tk.StringVar(page);self.metrics_label=ttk.Label(page,textvariable=self.metrics,style='Hint.TLabel');self.metrics_label.pack(anchor='w')
         actions=ActionRow(page,app.theme)
         for label,kind in (('清理行尾空格','trim'),('合并多余空行','blank'),('清空输入','clear')):actions.add(app.button(actions,label,lambda mode=kind:self.transform(mode)))
         actions.add(app.button(actions,'撤销',lambda:self.undo(False)));actions.add(app.button(actions,'重做',lambda:self.undo(True)))
-        find=card(page,app.theme,'查找与替换','按原样查找文字，替换支持撤销。')
+        self.metrics_label.pack_configure(side='bottom',before=self.text.frame)
+        actions.pack_configure(side='bottom',before=self.text.frame)
         self.find=tk.StringVar(page);self.replacement=tk.StringVar(page);self.ignore_case=tk.BooleanVar(page)
-        fields=ttk.Frame(find);fields.pack(fill='x');fields.columnconfigure(1,weight=1)
-        for index,(label,var) in enumerate((('查找',self.find),('替换为',self.replacement))):
-            ttk.Label(fields,text=label).grid(row=index,column=0,sticky='w',padx=(0,u(10)),pady=u(4))
-            ttk.Entry(fields,textvariable=var).grid(row=index,column=1,sticky='ew',pady=u(4))
-        actions=ActionRow(find,app.theme);actions.add(app.button(actions,'查找全部',lambda:self.replace(False)));actions.add(app.button(actions,'替换全部',lambda:self.replace(True)))
-        ttk.Checkbutton(find,text='忽略英文字母大小写',variable=self.ignore_case).pack(anchor='w',pady=u(4))
+        self.find_window=None;self.text.bind('<Control-h>',lambda _:self.open_find())
         self.job=None;self.text.bind('<<Modified>>',self.modified);self.text.bind('<Destroy>',self.destroyed,add='+');self.count()
+    def open_find(self):
+        app=self.app;u=app.theme.u
+        if self.find_window is not None and self.find_window.winfo_exists():
+            self.find_window.deiconify();self.find_window.lift();self.find_entry.focus_set();return 'break'
+        window=tk.Toplevel(app.root);self.find_window=window;window.title(app.tr('查找与替换'));window.transient(app.root)
+        window.protocol('WM_DELETE_WINDOW',window.withdraw);window.bind('<Escape>',lambda _:window.withdraw())
+        body=ttk.Frame(window,padding=u(20));body.pack(fill='both',expand=True);body.columnconfigure(1,weight=1)
+        for index,(label,var) in enumerate((('查找',self.find),('替换为',self.replacement))):
+            ttk.Label(body,text=label).grid(row=index,column=0,sticky='w',padx=(0,u(12)),pady=u(6))
+            entry=ttk.Entry(body,textvariable=var,width=26);entry.grid(row=index,column=1,sticky='ew',pady=u(6))
+            if index==0:self.find_entry=entry;entry.bind('<Return>',lambda _:self.replace(False))
+        actions=ttk.Frame(body);actions.grid(row=2,column=0,columnspan=2,sticky='ew',pady=u(10))
+        app.button(actions,'查找全部',lambda:self.replace(False)).pack(side='left',padx=(0,u(8)))
+        app.button(actions,'替换全部',lambda:self.replace(True)).pack(side='left')
+        ttk.Checkbutton(body,text='忽略英文字母大小写',variable=self.ignore_case).grid(row=3,column=0,columnspan=2,sticky='w')
+        app.theme.apply_tree(window);app.localizer.apply(window,());self.find_entry.focus_set()
+        return 'break'
+
     def destroyed(self,event):
         if event.widget is self.text and self.job:self.app.root.after_cancel(self.job);self.job=None
     def modified(self,event=None):

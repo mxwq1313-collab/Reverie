@@ -119,7 +119,7 @@ class Release211UITests(unittest.TestCase):
     def test_version_and_replacement_logo_asset(self):
         from wechat_archive import __version__
         from wechat_archive.ui.app_logo import original
-        self.assertEqual(__version__,'2.2.1');metadata=json.loads((Path(__file__).resolve().parents[1]/'wechat_archive/ui/assets/app_logo.json').read_text(encoding='utf-8'))
+        self.assertEqual(__version__,'2.2.2');metadata=json.loads((Path(__file__).resolve().parents[1]/'wechat_archive/ui/assets/app_logo.json').read_text(encoding='utf-8'))
         self.assertEqual(metadata['name'],'思绪缠结的可爱猫咪');self.assertEqual(hashlib.sha256(original()).hexdigest(),metadata['sha256'])
 
 

@@ -15,6 +15,7 @@ from .settings_panel import SettingsMixin
 from .help_panel import HelpReader
 from .icon_button import IconButton
 from .localization import Localizer
+from .layout_config import configure_changed,row_size
 from .slim_scrollbar import SlimScrollbar
 from .theme import Theme,PAPER,CANVAS,SIDEBAR,INK,SECONDARY,ACCENT,SELECTED,HOVER,LINE
 
@@ -46,7 +47,7 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         from .mbti_panel import open_mbti
         self.mbti_button=self.button(actions,'MBTI',lambda:open_mbti(self));self.mbti_button.configure(style='Quiet.TButton',width=-5);self.mbti_button.pack(side='left',padx=(0,u(10)))
         self.copilot_button=self.icon(actions,'codex','Codex 助手',self.toggle_copilot,'Quiet.TButton');self.copilot_button.pack(side='left',padx=(u(6),0))
-        main=ttk.Frame(root,style='Canvas.TFrame');main.grid(row=1,column=0,sticky='nsew');main.rowconfigure(0,weight=1);main.columnconfigure(1,weight=1)
+        main=ttk.Frame(root,style='Canvas.TFrame');main.grid(row=1,column=0,sticky='nsew');main.rowconfigure(0,weight=1);main.columnconfigure(1,weight=1);main.grid_propagate(False)
         self.nav=tk.Frame(main,background=SIDEBAR,width=u(152));self.nav.grid(row=0,column=0,sticky='nsew');self.nav.grid_propagate(False)
         self.nav.columnconfigure(0,weight=1);self.nav.rowconfigure(7,weight=1)
         for index,name in enumerate(self.PAGE_NAMES):
@@ -60,8 +61,10 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         self.nav_note.grid(row=10,column=0,sticky='w',padx=u(18),pady=(u(4),u(18)))
         from .navigation_feedback import NavigationFeedback
         self.navigation_feedback=NavigationFeedback(self)
-        self.workspace_panes=tk.PanedWindow(main,orient='horizontal',sashwidth=u(2),borderwidth=0,background=CANVAS,opaqueresize=True)
-        self.workspace_panes.grid(row=0,column=1,sticky='nsew')
+        from .resize_viewport import ResizeViewport
+        self.resize_viewport=ResizeViewport(main);self.resize_viewport.grid(row=0,column=1,sticky='nsew')
+        self.workspace_panes=tk.PanedWindow(self.resize_viewport,orient='horizontal',sashwidth=u(2),borderwidth=0,background=CANVAS,opaqueresize=True)
+        self.resize_viewport.attach(self.workspace_panes)
         self.page_host=ttk.Frame(self.workspace_panes,style='Canvas.TFrame');self.workspace_panes.add(self.page_host,minsize=u(600),stretch='always')
         self.page_host.rowconfigure(0,weight=1);self.page_host.columnconfigure(0,weight=1);self.build_copilot_host()
         for name in self.PAGE_NAMES:
@@ -192,17 +195,21 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
     def schedule_layout(self,event):
         if event.widget is not self.root or self.closed:return
         size=(event.width,event.height)
-        if size!=getattr(self,'resize_event_size',None):
-            self.resize_event_size=size
-            if getattr(self.chat_text,'completed_layout',None):self.chat_text.resizing_until=time.monotonic()+.35
+        if size==getattr(self,'resize_event_size',None):return
+        self.resize_event_size=size
+        self.resize_viewport.pin()
+        if getattr(self.chat_text,'completed_layout',None):self.chat_text.resizing_until=time.monotonic()+.15
         if self.layout_job:self.root.after_cancel(self.layout_job)
-        self.layout_job=self.root.after(120,self.adapt_layout)
+        # Run after pending native Configure events, not between overdue timers.
+        def settled():self.layout_job=self.root.after_idle(self.adapt_layout)
+        self.layout_job=self.root.after(120,settled)
 
     def adapt_layout(self):
         if self.layout_job:
             try:self.root.after_cancel(self.layout_job)
             except tk.TclError:pass
         self.layout_job=None
+        self.resize_viewport.release()
         key=(self.root.winfo_width(),self.theme.generation,getattr(self,'copilot_expanded',False),getattr(self,'copilot_width',0),self.compact_nav.get() if hasattr(self,'compact_nav') else False)
         if key==getattr(self,'layout_key',None):return
         self.layout_key=key
@@ -210,20 +217,20 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         reading_width=width-(self.copilot_width if getattr(self,'copilot_expanded',False) else 0)
         compact=reading_width<1020 or hasattr(self,'compact_nav') and self.compact_nav.get()
         nav_width=max(94,self.theme.text_size*5+20) if compact else max(152,self.theme.text_size*6+20);contacts=230 if width<1020 else 270
-        self.nav.configure(width=self.theme.u(nav_width));self.conversation_column.configure(width=self.theme.u(contacts))
+        configure_changed(self.nav,width=self.theme.u(nav_width));configure_changed(self.conversation_column,width=self.theme.u(contacts))
         short={'聊天归档':'聊天','添加记录':'添加','导出归档':'导出','工具与设置':'工具','设置':'设置','帮助':'帮助'}
-        for name,button in self.nav_buttons.items():self.localizer.text(button,short[name] if compact else ('工具' if name=='工具与设置' else name));button.configure(width=-4 if compact else -8)
+        for name,button in self.nav_buttons.items():self.localizer.text(button,short[name] if compact else ('工具' if name=='工具与设置' else name));configure_changed(button,width=-4 if compact else -8)
         self.localizer.text(self.nav_note,'统计')
-        self.header_archive.configure(wraplength=self.theme.u(max(120,width-440)))
-        for label in (self.conversation_title,self.chat_title_label,self.copilot_title):label.configure(font=self.theme.section)
+        configure_changed(self.header_archive,wraplength=self.theme.u(max(120,width-440)))
+        for label in (self.conversation_title,self.chat_title_label,self.copilot_title):configure_changed(label,font=self.theme.section)
         for section in (self.conversation_heading,self.chat_header,self.copilot_header):
-            section.rowconfigure(0,minsize=self.theme.control_height)
-        self.status_label.configure(wraplength=self.theme.u(max(260,width-260)))
+            row_size(section,0,self.theme.control_height)
+        configure_changed(self.status_label,wraplength=self.theme.u(max(260,width-260)))
         available=max(480,self.page_host.winfo_width()/self.theme.scale)
-        self.count_label.configure(wraplength=self.theme.u(max(200,available-contacts-80)))
+        configure_changed(self.count_label,wraplength=self.theme.u(max(200,available-contacts-80)))
         self.layout_copilot()
-        self.chat_header.rowconfigure(1,minsize=self.theme.control_height+self.theme.u(8))
-        self.contact_filter_row.rowconfigure(0,minsize=self.theme.control_height)
+        row_size(self.chat_header,1,self.theme.control_height+self.theme.u(8))
+        row_size(self.contact_filter_row,0,self.theme.control_height)
         self.fit_chat_title();self.fit_tool_tabs()
 
     def descendants(self,parent):

@@ -30,9 +30,18 @@ class ScrollPanel(ttk.Frame):
         self.canvas.pack(side='left',fill='both',expand=True);scrollbar.pack(side='right',fill='y')
         self.body=ttk.Frame(self.canvas,padding=theme.u(20))
         self.window_id=self.canvas.create_window(0,0,window=self.body,anchor='nw')
-        self.body.bind('<Configure>',lambda _:self.canvas.configure(scrollregion=self.canvas.bbox('all')))
-        self.canvas.bind('<Configure>',lambda e:self.canvas.itemconfigure(self.window_id,width=e.width))
+        self.body.bind('<Configure>',self.update_region)
+        self.canvas.bind('<Configure>',self.resize)
         theme.wheel_router.register(self,self.canvas,canvas=True)
+
+    def update_region(self,event=None):
+        region=self.canvas.bbox('all')
+        if region!=getattr(self,'region_key',None):
+            self.region_key=region;self.canvas.configure(scrollregion=region)
+
+    def resize(self,event):
+        if event.width!=getattr(self,'body_width',None):
+            self.body_width=event.width;self.canvas.itemconfigure(self.window_id,width=event.width)
 
 
 class ResultCard(ttk.Frame):

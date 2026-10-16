@@ -26,4 +26,6 @@ def verify_workspace(app):
     media=verify_forward_image(app)
     from .memory_release_check import verify_memory_utility
     memory=verify_memory_utility(app)
-    return {'memory_utility_2_2_1':memory,'forward_image_2_2':media,'patch_2_1_1':patch,'answer_markdown':True,'raw_unicode_preserved':True,'compact_citations':True,'reports_in_settings':True,'tool_tabs':labels,'workshop_actual_copy':True,'independent_tool_pages':True,'cat_logo':True,'feedback_receipt_visible':True,'no_model_request':True}
+    from .resize_release_check import verify_rounded_resize
+    resize=verify_rounded_resize(app)
+    return {'rounded_resize_2_2_2':resize,'memory_utility_2_2_1':memory,'forward_image_2_2':media,'patch_2_1_1':patch,'answer_markdown':True,'raw_unicode_preserved':True,'compact_citations':True,'reports_in_settings':True,'tool_tabs':labels,'workshop_actual_copy':True,'independent_tool_pages':True,'cat_logo':True,'feedback_receipt_visible':True,'no_model_request':True}

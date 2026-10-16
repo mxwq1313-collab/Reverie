@@ -38,7 +38,8 @@ class ContactList(ttk.Frame):
 
     def wheel(self,event):return self.theme.wheel_router.wheel(event)
     def resize(self,event):
-        self.canvas.itemconfigure(self.window,width=event.width)
+        if event.width!=getattr(self,'contact_body_width',None):
+            self.canvas.itemconfigure(self.window,width=event.width);self.contact_body_width=event.width
         key=(event.width,self.theme.generation,self.theme.body)
         if key==self.label_key:return
         self.label_key=key
@@ -377,7 +378,7 @@ class BubbleTimeline(ttk.Frame):
 
     def resize(self,event):
         if abs(event.width-self.last_width)<3:return
-        if getattr(self,'completed_layout',None):self.resizing_until=max(getattr(self,'resizing_until',0),time.monotonic()+.14)
+        if getattr(self,'completed_layout',None):self.resizing_until=max(getattr(self,'resizing_until',0),time.monotonic()+(.04 if hasattr(getattr(self,'app',None),'resize_viewport') else .14))
         self.remember_scroll_anchor()
         self.last_width=event.width
         self.queue_reflow()

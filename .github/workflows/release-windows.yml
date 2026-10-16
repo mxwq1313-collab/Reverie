@@ -40,6 +40,10 @@ jobs:
         run: |
           python -B -X utf8 tools/prepare_fixtures.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B -X utf8 -m unittest discover -s tests -p test_release_222.py -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B -X utf8 -m unittest discover -s tests -p test_light_controls.py -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -B -X utf8 -m unittest discover -s tests -p test_locale_ui.py -v
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -B -X utf8 -m unittest discover -s tests -p test_account_labels.py -v
@@ -74,13 +78,13 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
-          name: Sixu-2.2.1-Windows-x64
+          name: Sixu-2.2.2-Windows-x64
           path: |
-            build/Sixu-2.2.1-Windows-x64.zip
+            build/Sixu-2.2.2-Windows-x64.zip
             build/SHA256SUMS.txt
-      - name: Publish 2.2.1
+      - name: Publish 2.2.2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v2.2.1 build/Sixu-2.2.1-Windows-x64.zip build/SHA256SUMS.txt --target "$env:GITHUB_SHA" --title "思绪 2.2.1" --notes-file docs/SIXU_2_2_1_RELEASE.md
+          gh release create v2.2.2 build/Sixu-2.2.2-Windows-x64.zip build/SHA256SUMS.txt --target "$env:GITHUB_SHA" --title "思绪 2.2.2" --notes-file docs/SIXU_2_2_2_RELEASE.md
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

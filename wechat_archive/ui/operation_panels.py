@@ -12,6 +12,9 @@ from .source_options import SOURCE_RANGES
 
 class OperationPanels:
     def notebook_page(self,notebook,name,label=None):
+        if name=='文字小工坊':
+            frame=ttk.Frame(notebook,padding=self.theme.u(20));frame._lazy_theme=True;notebook.add(frame,text=label or name)
+            self.pages[name]=frame;self.tab_routes[name]=(notebook,frame);return frame
         scroll=ScrollPanel(notebook,self.theme);scroll._lazy_theme=True;notebook.add(scroll,text=label or name)
         self.pages[name]=scroll.body;self.tab_routes[name]=(notebook,scroll)
         return scroll.body

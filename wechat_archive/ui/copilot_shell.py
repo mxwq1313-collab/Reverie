@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 from .theme import PAPER,LINE,CANVAS
+from .layout_config import configure_changed
 
 
 class CopilotShell:
@@ -18,7 +19,7 @@ class CopilotShell:
         self.copilot_title=ttk.Label(header,text='Codex',font=self.theme.section);self.copilot_title.grid(row=0,column=0,sticky='w')
         self.copilot_hide_button=self.icon(header,'close','收起 Codex',self.hide_copilot);self.copilot_hide_button.configure(style='AiQuiet.TButton');self.copilot_hide_button.grid(row=0,column=1,sticky='e')
         privacy=ttk.Label(header,text='提问及相关归档片段会发送给 OpenAI',style='Hint.TLabel',wraplength=u(300));privacy.grid(row=1,column=0,columnspan=2,sticky='w',pady=(u(3),0))
-        header.bind('<Configure>',lambda event:privacy.configure(wraplength=max(u(180),event.width-u(32))),add='+')
+        header.bind('<Configure>',lambda event:configure_changed(privacy,wraplength=max(u(180),event.width-u(32))),add='+')
         self.copilot_body=ttk.Frame(self.copilot_host,padding=(u(16),0,u(16),u(8)))
         self.copilot_body.grid(row=1,column=1,sticky='nsew')
         self.workspace_panes.bind('<ButtonRelease-1>',self.save_copilot_sash,add='+')
@@ -26,7 +27,7 @@ class CopilotShell:
     def layout_copilot(self):
         if not hasattr(self,'copilot_host'):return
         panes=self.workspace_panes;u=self.theme.u
-        width=max(panes.winfo_width(),u(700))
+        width=max(self.resize_viewport.winfo_width(),u(700))
         threshold=940 if self.copilot_mode=='docked' else 1020 if self.copilot_mode=='drawer' else 980
         mode='docked' if width/self.theme.scale>=threshold else 'drawer'
         if not self.copilot_expanded:mode='hidden'

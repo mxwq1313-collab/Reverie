@@ -20,7 +20,7 @@ def verify_v2(parent,folder):
     controller=ApplicationController(folder/'profile');controller.open_archive(database);root=tk.Tk();root.attributes('-alpha',0);root.geometry('1100x760');errors=[];root.report_callback_exception=lambda *args:errors.append(str(args));app=ApplicationWindow(root,controller=controller)
     original=EmojiFetch.acquire
     try:
-        root.update();assert __version__=='2.2.1';assert app.source_scope.get()=='全部电脑本地记录';assert selected_range('最近 100 万条')==(False,1000000)
+        root.update();assert __version__=='2.2.2';assert app.source_scope.get()=='全部电脑本地记录';assert selected_range('最近 100 万条')==(False,1000000)
         offline=controller.repair_emojis(False);assert offline['missing']==1
         # Only the resource transport is substituted; repair, commit and Tk decode stay real.
         EmojiFetch.acquire=lambda self,records,directory:poster
