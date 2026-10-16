@@ -126,7 +126,8 @@ class SettingsMixin:
         if hasattr(self,'help_reader'):self.help_reader.refresh_language()
         for widget in self.chat_text.body.winfo_children():
             if hasattr(widget,'_date_value'):
-                value=widget._date_value.strftime('%Y-%m-%d' if self.localizer.language=='en_US' else '%Y年%m月%d日')
+                from .message_widgets import date_heading
+                value=date_heading(widget._date_value,self.localizer.language)
                 widget.configure(text=value)
 
     def poll_system_theme(self):

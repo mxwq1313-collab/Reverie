@@ -40,6 +40,8 @@ jobs:
         run: |
           python -B -X utf8 tools/prepare_fixtures.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python -B -X utf8 -m unittest discover -s tests -p test_locale_ui.py -v
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -B -X utf8 -m unittest discover -s tests -p test_account_labels.py -v
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -B -X utf8 -m unittest discover -s tests -p test_release_220.py -v

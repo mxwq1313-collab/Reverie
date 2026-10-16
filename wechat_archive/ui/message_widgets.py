@@ -10,6 +10,11 @@ from .slim_scrollbar import SlimScrollbar
 ZONE=timezone(timedelta(hours=8))
 
 
+def date_heading(stamp,language='zh_CN'):
+    if language=='en_US':return f'{stamp.year:04d}-{stamp.month:02d}-{stamp.day:02d}'
+    return f'{stamp.year:04d}年{stamp.month:02d}月{stamp.day:02d}日'
+
+
 def display_time(value):
     return datetime.fromisoformat(value.replace('Z','+00:00')).astimezone(ZONE)
 
@@ -301,9 +306,9 @@ class BubbleTimeline(ttk.Frame):
         u=self.theme.u
         fresh=[]
         for row in rows:
-            stamp=display_time(row['create_time']);date=stamp.strftime('%Y年%m月%d日')
+            stamp=display_time(row['create_time']);date=date_heading(stamp)
             if date!=self.last_date:
-                date_label=tk.Label(self.body,text=stamp.strftime('%Y-%m-%d') if self.theme.language=='en_US' else date,background=self.theme.palette['CANVAS'],foreground=self.theme.palette['SECONDARY'],font=self.theme.small,pady=u(12))
+                date_label=tk.Label(self.body,text=date_heading(stamp,self.theme.language),background=self.theme.palette['CANVAS'],foreground=self.theme.palette['SECONDARY'],font=self.theme.small,pady=u(12))
                 date_label._date_value=stamp;date_label.pack(fill='x')
                 fresh.append(date_label)
                 self.last_date=date
