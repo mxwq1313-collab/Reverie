@@ -12,7 +12,7 @@ from .source_options import SOURCE_RANGES
 
 class OperationPanels:
     def notebook_page(self,notebook,name,label=None):
-        if name=='文字小工坊':
+        if name=='随机回忆':
             frame=ttk.Frame(notebook,padding=self.theme.u(20));frame._lazy_theme=True;notebook.add(frame,text=label or name)
             self.pages[name]=frame;self.tab_routes[name]=(notebook,frame);return frame
         scroll=ScrollPanel(notebook,self.theme);scroll._lazy_theme=True;notebook.add(scroll,text=label or name)
@@ -152,15 +152,13 @@ class OperationPanels:
     def build_tools(self):
         page=self.pages['工具与设置'];self.title(page,'工具')
         self.tools_notebook=ttk.Notebook(page);self.tools_notebook.pack(fill='both',expand=True,pady=(self.theme.u(10),0))
-        for name,label in (('数据管理','归档管理'),('本地知识问答','语义检索'),('文字小工坊','文字小工坊')):
+        for name,label in (('数据管理','归档管理'),('本地知识问答','语义检索'),('随机回忆','随机回忆')):
             self.notebook_page(self.tools_notebook,name,label)
         self.pages['备份检查']=self.pages['数据管理']
         self.build_management();self.build_user_settings();self.build_reports()
         capsule=ttk.Frame(self.page_host,padding=self.theme.u(16));capsule._lazy_theme=True
         capsule.grid(row=0,column=0,sticky='nsew');capsule.grid_remove();self.pages['时光胶囊']=capsule
         scroll=ScrollPanel(capsule,self.theme);scroll.pack(fill='both',expand=True);self.capsule_content=scroll.body
-        from .memory_popup import MemoryPopup
-        self.memory_popup=MemoryPopup(self);self.memory_content=self.memory_popup.content
         from .toolbox_panel import ToolboxPanel
         self.toolbox_panel=ToolboxPanel(self)
         self.tools_notebook.bind('<<NotebookTabChanged>>',self.tool_tab_changed,add='+')
@@ -170,8 +168,8 @@ class OperationPanels:
 
     def fit_tool_tabs(self):
         if self.closed:return
-        names=('数据管理','本地知识问答','文字小工坊')
-        labels=('归档管理','语义检索','文字小工坊')
+        names=('数据管理','本地知识问答','随机回忆')
+        labels=('归档管理','语义检索','随机回忆')
         width=self.tools_notebook.winfo_width()
         if width<20:return
         key=(width,self.theme.generation,self.localizer.language)
@@ -179,7 +177,7 @@ class OperationPanels:
         self.tool_tab_size_key=key
         full=[self.tr(label) for label in labels]
         compact=sum(self.theme.font.measure(label)+self.theme.u(28) for label in full)>width
-        short=('Archive','Search','Text') if self.localizer.language=='en_US' else ('管理','检索','文字工坊')
+        short=('Archive','Search','Memory') if self.localizer.language=='en_US' else ('管理','检索','回忆')
         for name,label in zip(names,short if compact else full):self.tools_notebook.tab(self.tab_routes[name][1],text=label)
 
     def tool_tab_changed(self,event=None):

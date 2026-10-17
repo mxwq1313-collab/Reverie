@@ -207,12 +207,13 @@ class BubbleTimeline(ttk.Frame):
     def __init__(self,parent,theme):
         super().__init__(parent);self.theme=theme;self.rows=[];self.bubbles={};self.last_date=None;self.last_width=0;self.layout_job=None
         self.canvas=tk.Canvas(self,background=CANVAS,highlightthickness=0)
-        bar=SlimScrollbar(self,theme,command=self.canvas.yview);self.scrollbar=bar;self.canvas.configure(yscrollcommand=self.scrolled)
+        bar=SlimScrollbar(self,theme,command=self.user_yview);self.scrollbar=bar;self.canvas.configure(yscrollcommand=self.scrolled)
         self.canvas.pack(side='left',fill='both',expand=True);bar.pack(side='right',fill='y')
         self.body=tk.Frame(self.canvas,background=CANVAS)
         self.window=self.canvas.create_window(0,0,window=self.body,anchor='nw')
         self.body.bind('<Configure>',lambda _:self.canvas.configure(scrollregion=self.canvas.bbox('all')))
         self.canvas.bind('<Configure>',self.resize);theme.wheel_router.register(self,self.canvas,canvas=True)
+        self.canvas._on_user_scroll=self.remember_user_scroll
         self.canvas.bind('<Map>',lambda _:self.queue_reflow())
         self.empty=None;self.thumbnails=[]
 
@@ -378,7 +379,6 @@ class BubbleTimeline(ttk.Frame):
 
     def resize(self,event):
         if abs(event.width-self.last_width)<3:return
-        if getattr(self,'completed_layout',None):self.resizing_until=max(getattr(self,'resizing_until',0),time.monotonic()+(.04 if hasattr(getattr(self,'app',None),'resize_viewport') else .14))
         self.remember_scroll_anchor()
         self.last_width=event.width
         self.queue_reflow()
@@ -387,13 +387,10 @@ class BubbleTimeline(ttk.Frame):
         key=(self.canvas.winfo_width(),self.theme.generation,getattr(self,'layout_revision',0))
         if key==getattr(self,'completed_layout',None) and not getattr(self,'reflow_busy',False):
             self.refresh_visible();return
-        if self.layout_job:self.after_cancel(self.layout_job)
-        self.layout_job=self.after(120,self.reflow) if self.bubbles and getattr(self,'completed_layout',None) and not getattr(self,'rendering',False) and not immediate else self.after_idle(self.reflow)
+        if self.layout_job:return
+        self.layout_job=self.after_idle(self.reflow)
 
     def reflow(self):
-        remaining=getattr(self,'resizing_until',0)-time.monotonic()
-        if remaining>0 and getattr(self,'completed_layout',None):
-            self.layout_job=self.after(max(1,int(remaining*1000)+1),self.reflow);return
         if getattr(self,'reflow_busy',False):
             self.layout_job=None;self.reflow_again=True;return
         if self.layout_job:
@@ -439,7 +436,7 @@ class BubbleTimeline(ttk.Frame):
                             bubble.configure(width=bubble_width)
                             value['label'].configure(wraplength=width)
                             prepared.append((value,bubble_width))
-                if getattr(getattr(self,'app',None),'background_browsing',True) and time.perf_counter()-started>.006:
+                if getattr(getattr(self,'app',None),'background_browsing',False) and time.perf_counter()-started>.006:
                     self.layout_step_job=self.after(1,prepare_batch);return
             self.finish_job=self.after_idle(lambda:self.finish_reflow(prepared,start_width,width,line_height,revision,generation))
         prepare_batch()
@@ -468,7 +465,7 @@ class BubbleTimeline(ttk.Frame):
                 bubble.tag_lower('shape')
                 if self.theme.active_mode!='light' and value.get('theme_generation')!=generation:
                     self.theme.apply_tree(value['outer']);value['theme_generation']=generation
-                if getattr(getattr(self,'app',None),'background_browsing',True) and time.perf_counter()-started>.006:
+                if getattr(getattr(self,'app',None),'background_browsing',False) and time.perf_counter()-started>.006:
                     self.finish_job=self.after(1,finish_batch);return
             if self.empty:self.state_hint.configure(wraplength=max(u(160),width-u(40)))
             if getattr(self,'restore_job',None):self.after_cancel(self.restore_job)
@@ -480,6 +477,17 @@ class BubbleTimeline(ttk.Frame):
             if self.reflow_again or self.canvas.winfo_width()!=start_width:self.queue_reflow()
         finish_batch()
 
+    def user_yview(self,*args):
+        result=self.canvas.yview(*args)
+        if args:self.remember_user_scroll()
+        return result
+
+    def remember_user_scroll(self):
+        # A wheel/scrollbar action supersedes any anchor captured by older layout.
+        self.pending_anchor=None
+        self.pending_top=max(0,self.canvas.canvasy(0))
+        self.remember_scroll_anchor()
+
     def scrolled(self,first,last):
         self.scrollbar.set(first,last)
         if not getattr(self,'visibility_job',None):self.visibility_job=self.after_idle(self.refresh_visible)
@@ -488,9 +496,6 @@ class BubbleTimeline(ttk.Frame):
         job=getattr(self,'visibility_job',None)
         if job:self.after_cancel(job)
         self.visibility_job=None
-        remaining=getattr(self,'resizing_until',0)-time.monotonic()
-        if remaining>0:
-            self.visibility_job=self.after(max(1,int(remaining*1000)+1),self.refresh_visible);return
         top=self.canvas.canvasy(0)-self.theme.u(80);bottom=top+self.canvas.winfo_height()+self.theme.u(160)
         self.thumbnails=[(outer,canvas) for outer,canvas in self.thumbnails if canvas.winfo_exists()]
         for outer,canvas in self.thumbnails:

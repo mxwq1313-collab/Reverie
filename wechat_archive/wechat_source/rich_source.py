@@ -27,10 +27,10 @@ def decoded_text(value):
 
 def source_sender(peer,row,known=()):
     sender=row.get('sender_username')
-    if sender:return sender
+    if isinstance(sender,str) and sender.strip():return sender.strip()
     if peer.endswith('@chatroom'):
         # Registered WeChat group transport prefix; never infer a sender from a nickname.
-        match=re.match(r'^([A-Za-z0-9_@.\-]{1,256}):\r?\n',decoded_text(row.get('message_content')))
+        match=re.match(r'^([A-Za-z0-9_@.\-]{1,256})[ \t]*:\r?\n',decoded_text(row.get('message_content')))
         if match and (match[1] in known or re.fullmatch(r'wxid_[A-Za-z0-9_]+',match[1])):return match[1]
     return None
 
@@ -43,16 +43,17 @@ def source_stats(db,peer):
             columns={x['name'] for x in conn.execute(f'PRAGMA table_info("{table}")')}
             if not set(SOURCE_COLUMNS)<=columns:raise ArchiveError('来源消息字段不匹配')
             for row in conn.execute(f'SELECT n.user_name,COUNT(*) count FROM "{table}" m LEFT JOIN Name2Id n ON n.rowid=m.real_sender_id GROUP BY n.user_name'):
-                total+=row['count'];senders[row['user_name']]=senders.get(row['user_name'],0)+row['count']
-                if row['user_name']==db.wxid:own+=row['count']
+                sender=row['user_name'].strip() if isinstance(row['user_name'],str) else row['user_name']
+                total+=row['count'];senders[sender]=senders.get(sender,0)+row['count']
+                if sender==db.wxid:own+=row['count']
             if senders.get(None,0) or senders.get('',0):
                 known={x['username'] for x in db.get_group_members(peer)} if peer.endswith('@chatroom') else ()
-                for row in conn.execute(f'SELECT m.local_type,m.message_content,n.user_name sender_username FROM "{table}" m LEFT JOIN Name2Id n ON n.rowid=m.real_sender_id WHERE n.user_name IS NULL OR n.user_name=\'\''):
+                for row in conn.execute(f'SELECT m.local_type,m.message_content,n.user_name sender_username FROM "{table}" m LEFT JOIN Name2Id n ON n.rowid=m.real_sender_id WHERE n.user_name IS NULL OR trim(n.user_name)=\'\''):
                     if type(row['local_type']) is int and row['local_type'] & 0xffffffff in (10000,10002):
-                        senders[row['sender_username']]-=1;system+=1;continue
+                        key=row['sender_username'].strip() if isinstance(row['sender_username'],str) else row['sender_username'];senders[key]-=1;system+=1;continue
                     sender=source_sender(peer,dict(row),known)
                     if sender:
-                        key=row['sender_username'];senders[key]-=1;senders[sender]=senders.get(sender,0)+1
+                        key=row['sender_username'].strip() if isinstance(row['sender_username'],str) else row['sender_username'];senders[key]-=1;senders[sender]=senders.get(sender,0)+1
                         if sender==db.wxid:own+=1
         return {'message_count':total,'own_count':own,'own_ratio':own/total if total else 0,'sender_counts':senders,'system_count':system,'unresolved_count':senders.get(None,0)+senders.get('',0)}
     value=db._run_msg_query(peer,query)

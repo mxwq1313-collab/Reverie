@@ -53,8 +53,6 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         for index,name in enumerate(self.PAGE_NAMES):
             button=ttk.Button(self.nav,text='工具' if name=='工具与设置' else name,style='Nav.TButton',cursor='hand2',command=lambda value=name:self.show_page(value))
             button.grid(row=index+1,column=0,sticky='ew',padx=u(8),pady=u(4));self.nav_buttons[name]=button;self.buttons.append(button)
-        self.memory_button=self.icon(self.nav,'shuffle','随机回忆',lambda:self.memory_popup.toggle(),'Quiet.TButton')
-        self.memory_button.grid(row=8,column=0,sticky='w',padx=u(18),pady=(u(8),u(4)))
         self.capsule_button=self.icon(self.nav,'capsule','时光胶囊',lambda:self.show_page('时光胶囊'),'Quiet.TButton')
         self.capsule_button.grid(row=9,column=0,sticky='w',padx=u(18),pady=(u(8),u(4)))
         self.nav_note=self.icon(self.nav,'stats','统计',lambda:self.show_page('统计'),'Quiet.TButton')
@@ -63,9 +61,10 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         self.navigation_feedback=NavigationFeedback(self)
         from .resize_viewport import ResizeViewport
         self.resize_viewport=ResizeViewport(main);self.resize_viewport.grid(row=0,column=1,sticky='nsew')
-        self.workspace_panes=tk.PanedWindow(self.resize_viewport,orient='horizontal',sashwidth=u(2),borderwidth=0,background=CANVAS,opaqueresize=True)
+        from .split_controls import split_options
+        self.workspace_panes=tk.PanedWindow(self.resize_viewport,**split_options(self.theme))
         self.resize_viewport.attach(self.workspace_panes)
-        self.page_host=ttk.Frame(self.workspace_panes,style='Canvas.TFrame');self.workspace_panes.add(self.page_host,minsize=u(600),stretch='always')
+        self.page_host=ttk.Frame(self.workspace_panes,style='Canvas.TFrame');self.workspace_panes.add(self.page_host,minsize=u(420),stretch='always')
         self.page_host.rowconfigure(0,weight=1);self.page_host.columnconfigure(0,weight=1);self.build_copilot_host()
         for name in self.PAGE_NAMES:
             page=ttk.Frame(self.page_host,padding=0 if name=='聊天归档' else u(16));page._lazy_theme=True;page.grid(row=0,column=0,sticky='nsew');self.pages[name]=page;page.grid_remove()
@@ -82,7 +81,9 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
             self.status.set('正在打开归档…');self.show_browser_state('loading')
             self.startup_job=root.after(50,lambda:self.load_initial_archive(archive))
         else:self.load_initial_archive(archive)
-        root.bind('<Configure>',self.schedule_layout,add='+');self.adapt_layout()
+        self.workspace_panes.bind('<Configure>',lambda _:self.queue_layout(),add='+')
+        root.bind('<Configure>',self.schedule_layout,add='+')
+        self.resize_viewport.bind('<Configure>',lambda _:self.queue_layout(),add='+');self.adapt_layout()
         root.bind('<Control-f>',self.focus_message_search,add='+')
         root.bind('<Control-Shift-F>',lambda event:self.focus_message_search(event,True),add='+')
         root.bind('<Escape>',self.browser_escape,add='+')
@@ -146,9 +147,6 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         return tree
 
     def show_page(self,name):
-        if name=='随机回忆':
-            self.memory_popup.open();return
-        if hasattr(self,'memory_popup'):self.memory_popup.hide(restore_focus=False)
         if name in ('欢迎','聊天归档'):primary='聊天归档'
         elif name in ('可读导出','导出归档'):primary='导出归档'
         elif name in ('电脑微信','导入文件','添加记录'):primary='添加记录'
@@ -197,27 +195,28 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         size=(event.width,event.height)
         if size==getattr(self,'resize_event_size',None):return
         self.resize_event_size=size
-        self.resize_viewport.pin()
-        if getattr(self.chat_text,'completed_layout',None):self.chat_text.resizing_until=time.monotonic()+.15
-        if self.layout_job:self.root.after_cancel(self.layout_job)
-        # Run after pending native Configure events, not between overdue timers.
-        def settled():self.layout_job=self.root.after_idle(self.adapt_layout)
-        self.layout_job=self.root.after(120,settled)
+        self.queue_layout()
+
+    def queue_layout(self):
+        # Keep one pending pass, reading the latest geometry after Tk lays out children.
+        # Never freeze/unmap the workspace or restart a trailing-edge resize timer.
+        if self.closed or self.layout_job is not None:return
+        self.layout_job=self.root.after_idle(self.adapt_layout)
 
     def adapt_layout(self):
         if self.layout_job:
             try:self.root.after_cancel(self.layout_job)
             except tk.TclError:pass
         self.layout_job=None
-        self.resize_viewport.release()
-        key=(self.root.winfo_width(),self.theme.generation,getattr(self,'copilot_expanded',False),getattr(self,'copilot_width',0),self.compact_nav.get() if hasattr(self,'compact_nav') else False)
+        if self.closed:return
+        key=(self.root.winfo_width(),self.resize_viewport.winfo_width(),self.workspace_panes.winfo_width(),self.browser_panes.winfo_width(),self.theme.generation,getattr(self,'copilot_expanded',False),getattr(self,'copilot_width',0),self.compact_nav.get() if hasattr(self,'compact_nav') else False,getattr(self,'current_page',None))
         if key==getattr(self,'layout_key',None):return
         self.layout_key=key
         width=max(self.root.winfo_width(),self.theme.u(820))/self.theme.scale
         reading_width=width-(self.copilot_width if getattr(self,'copilot_expanded',False) else 0)
         compact=reading_width<1020 or hasattr(self,'compact_nav') and self.compact_nav.get()
-        nav_width=max(94,self.theme.text_size*5+20) if compact else max(152,self.theme.text_size*6+20);contacts=230 if width<1020 else 270
-        configure_changed(self.nav,width=self.theme.u(nav_width));configure_changed(self.conversation_column,width=self.theme.u(contacts))
+        nav_width=max(94,self.theme.text_size*5+20) if compact else max(152,self.theme.text_size*6+20)
+        configure_changed(self.nav,width=self.theme.u(nav_width));self.layout_browser_split()
         short={'聊天归档':'聊天','添加记录':'添加','导出归档':'导出','工具与设置':'工具','设置':'设置','帮助':'帮助'}
         for name,button in self.nav_buttons.items():self.localizer.text(button,short[name] if compact else ('工具' if name=='工具与设置' else name));configure_changed(button,width=-4 if compact else -8)
         self.localizer.text(self.nav_note,'统计')
@@ -226,8 +225,7 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         for section in (self.conversation_heading,self.chat_header,self.copilot_header):
             row_size(section,0,self.theme.control_height)
         configure_changed(self.status_label,wraplength=self.theme.u(max(260,width-260)))
-        available=max(480,self.page_host.winfo_width()/self.theme.scale)
-        configure_changed(self.count_label,wraplength=self.theme.u(max(200,available-contacts-80)))
+        self.fit_chat_footer()
         self.layout_copilot()
         row_size(self.chat_header,1,self.theme.control_height+self.theme.u(8))
         row_size(self.contact_filter_row,0,self.theme.control_height)
@@ -250,7 +248,7 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         self.export_running='保存离线' in label
         if self.export_running:self.write(self.export_result,'正在导出所选范围内的消息与附件…')
         for widget in self.descendants(self.root):
-            if widget in (self.cancel_button,self.copilot_button,self.copilot_hide_button,self.nav_note,self.capsule_button,self.memory_button,*self.nav_buttons.values()):continue
+            if widget in (self.cancel_button,self.copilot_button,self.copilot_hide_button,self.nav_note,self.capsule_button,*self.nav_buttons.values()):continue
             if widget.winfo_class() in ('TButton','Button','TEntry','TCombobox','TCheckbutton','TSpinbox'):
                 try:self.disabled_states.append((widget,str(widget.cget('state'))));widget.configure(state='disabled')
                 except tk.TclError:pass
@@ -324,6 +322,7 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
     def close(self):
         if self.closed:return
         if self.busy:self.status.set('正在处理数据，请等完成后关闭。');return
+        self.cancel_copilot_drag()
         self.persist_copilot_layout()
         if hasattr(self,'feedback'):self.feedback.close()
         if hasattr(self,'source_renderer'):self.source_renderer.cancel()

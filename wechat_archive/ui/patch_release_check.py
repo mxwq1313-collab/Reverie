@@ -18,8 +18,8 @@ def verify_patch(app):
     card.fold.invoke();root.update();assert not card.expanded and not card.rendered
     app.capsule_button.invoke();root.update();assert app.current_page=='时光胶囊' and app.toolbox_panel.capsule.memory.winfo_ismapped()
     assert int(app.capsule_button.grid_info()['row'])<int(app.nav_note.grid_info()['row'])
-    app.memory_button.invoke();root.update();assert app.memory_popup.window.winfo_ismapped() and '随机回忆' not in app.tab_routes
-    for name in ('文字小工坊',):
+    app.show_page('随机回忆');root.update();assert app.toolbox_panel.random.memory.winfo_ismapped() and '随机回忆' in app.tab_routes
+    for name in ('随机回忆',):
         app.show_page(name);root.update();notebook,tab=app.tab_routes[name]
         assert notebook is app.tools_notebook and notebook.select()==str(tab)
     picture=Path(app.controller.database).parent/'patch_avatar.png';Image.new('RGB',(64,64),'#df9494').save(picture)
@@ -27,4 +27,4 @@ def verify_patch(app):
     content=app.contact_tree.cards['883'][0].content;canvas=next(w for w in content.winfo_children() if isinstance(w,tk.Canvas))
     assert not bool(root.tk.call(str(canvas.avatar_image),'transparency','get',app.theme.u(4),app.theme.u(4)))
     assert bool(root.tk.call(str(canvas.avatar_image),'transparency','get',0,0))
-    return {'folded_default':True,'inline_normal_messages':10,'forward_inline_emoticon':True,'raw_forward_copy_unchanged':True,'fold_releases_widgets':True,'capsule_bottom_above_statistics':True,'random_memory_bottom_utility':True,'wechat_rounded_square_avatar':True,'model_requests':False,'wechat_source_read':False}
+    return {'folded_default':True,'inline_normal_messages':10,'forward_inline_emoticon':True,'raw_forward_copy_unchanged':True,'fold_releases_widgets':True,'capsule_bottom_above_statistics':True,'random_memory_tool_tab':True,'wechat_rounded_square_avatar':True,'model_requests':False,'wechat_source_read':False}

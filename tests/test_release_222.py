@@ -28,13 +28,13 @@ class Resize222Tests(unittest.TestCase):
             if not self.app.layout_job and not self.app.chat_text.layout_job and not getattr(self.app.chat_text,'reflow_busy',False):break
             time.sleep(.01)
         self.root.update();self.assertFalse(self.app.layout_job);self.assertEqual(self.errors,[])
-    def test_workspace_stays_mapped_and_finally_fills_its_viewport(self):
+    def test_workspace_is_retained_and_finally_fills_its_viewport(self):
         self.show(1100,720);self.settle();app=self.app;pane=app.workspace_panes;identity=str(pane)
-        before=(pane.winfo_width(),pane.winfo_height());app.resize_viewport.pin()
-        self.root.geometry('1450x850');self.root.update_idletasks()
+        before=(pane.winfo_width(),pane.winfo_height())
+        self.root.geometry('1450x850');self.root.update()
         self.assertTrue(pane.winfo_viewable());self.assertEqual(str(pane),identity)
-        self.assertEqual((pane.winfo_width(),pane.winfo_height()),before)
-        self.settle();self.assertFalse(app.resize_viewport.pinned)
+        self.assertNotEqual((pane.winfo_width(),pane.winfo_height()),before)
+        self.settle()
         self.assertAlmostEqual(pane.winfo_width(),app.resize_viewport.winfo_width(),delta=1)
         self.assertAlmostEqual(pane.winfo_height(),app.resize_viewport.winfo_height(),delta=1)
     def test_large_font_workspace_tracks_actual_parent_bounds(self):
@@ -69,14 +69,6 @@ class Resize222Tests(unittest.TestCase):
         with Image.open(icon) as artwork:
             self.assertEqual(artwork.info['sizes'],{(n,n) for n in (16,24,32,48,64,128,256)})
             for size in artwork.info['sizes']:self.assertEqual(artwork.ico.getimage(size).convert('RGBA').getpixel((0,0))[3],0)
-    def test_find_replace_popup_preserves_unicode_document_and_undo(self):
-        self.show();app=self.app;app.show_page('文字小工坊');self.settle();tool=app.toolbox_panel.workshop
-        tool.set_text('你好😀 hello\n原文 hello');tool.open_find();self.root.update()
-        self.assertTrue(tool.find_window.winfo_viewable());tool.find.set('hello');tool.replacement.set('world');tool.replace(True)
-        self.assertEqual(tool.text.get('1.0','end-1c'),'你好😀 world\n原文 world')
-        tool.undo(False);self.assertEqual(tool.text.get('1.0','end-1c'),'你好😀 hello\n原文 hello')
-        window=str(tool.find_window);tool.find_window.withdraw();tool.open_find();self.root.update();self.assertEqual(str(tool.find_window),window)
-        self.assertIsNone(self.root.grab_current());self.assertEqual(self.errors,[])
     def test_unchanged_title_reuses_measurement_and_font_changes_invalidate_it(self):
         self.show();self.settle();app=self.app;app.fit_chat_title()
         with patch.object(app.theme,'elide',wraps=app.theme.elide) as measure:
@@ -96,10 +88,5 @@ class Resize222Tests(unittest.TestCase):
             self.assertTrue(configure_changed(label,font=font));self.assertEqual(configure.call_count,1)
         self.assertEqual(self.errors,[])
 
-    def test_large_text_workshop_actions_and_editor_remain_reachable(self):
-        self.show(900,700);app=self.app;app.theme.update(24,app.theme.family,'dark','zh_CN',48)
-        app.show_page('文字小工坊');self.settle();tool=app.toolbox_panel.workshop
-        self.assertTrue(tool.text.winfo_viewable());self.assertGreater(tool.text.winfo_height(),30)
-        tool.open_find();self.root.update();self.assertTrue(tool.find_entry.winfo_viewable());self.assertEqual(self.errors,[])
 
 if __name__=='__main__':unittest.main(verbosity=2)

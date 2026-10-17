@@ -10,8 +10,13 @@ from .browser_reads import AsyncBrowserMixin
 class BrowserMixin(AsyncBrowserMixin):
     def build_browser(self):
         page=self.pages['聊天归档'];u=self.theme.u
-        page.columnconfigure(1,weight=1);page.rowconfigure(0,weight=1)
-        self.conversation_column=ttk.Frame(page,width=u(270),padding=(u(16),u(16)));self.conversation_column.grid(row=0,column=0,sticky='nsew');self.conversation_column.pack_propagate(False)
+        page.columnconfigure(0,weight=1);page.rowconfigure(0,weight=1)
+        from .split_controls import split_options,bind_split
+        self.browser_panes=tk.PanedWindow(page,**split_options(self.theme));self.browser_panes.grid(row=0,column=0,sticky='nsew')
+        self.contacts_width=self.controller.browser_layout()['width']
+        self.browser_panes.bind('<Configure>',lambda _:self.queue_layout(),add='+')
+        bind_split(self,self.browser_panes,self.save_browser_sash,self.reset_browser_sash)
+        self.conversation_column=ttk.Frame(self.browser_panes,width=u(self.contacts_width),padding=(u(16),u(16)));self.browser_panes.add(self.conversation_column,minsize=u(140),stretch='never');self.conversation_column.pack_propagate(False)
         column=self.conversation_column
         row=ttk.Frame(column);row.pack(fill='x',pady=(0,u(8)));row.columnconfigure(0,weight=1);row.rowconfigure(0,minsize=self.theme.control_height);self.conversation_heading=row
         self.conversation_title=ttk.Label(row,text='会话',font=self.theme.section);self.conversation_title.grid(row=0,column=0,sticky='w')
@@ -30,7 +35,7 @@ class BrowserMixin(AsyncBrowserMixin):
         self.contact_tree=ContactList(column,self.theme,self.select_contact);self.contact_tree.pack(fill='both',expand=True)
         self.contact_tree.canvas.bind('<Control-f>',self.focus_message_search,add='+')
         self.contact_tree.canvas.bind('<Control-Shift-F>',lambda event:self.focus_message_search(event,True),add='+')
-        right=ttk.Frame(page,style='Canvas.TFrame');right.grid(row=0,column=1,sticky='nsew');right.columnconfigure(0,weight=1);right.rowconfigure(3,weight=1)
+        right=ttk.Frame(self.browser_panes,style='Canvas.TFrame');self.message_content_column=right;self.browser_panes.add(right,minsize=u(220),stretch='always');right.columnconfigure(0,weight=1);right.rowconfigure(3,weight=1)
         header=ttk.Frame(right,padding=(u(16),u(16)));header.grid(row=0,column=0,sticky='ew');header.columnconfigure(0,weight=1);self.chat_header=header
         self.chat_title=tk.StringVar(self.root,value='聊天归档');self.chat_subtitle=tk.StringVar(self.root,value='私聊消息')
         self.chat_title_label=ttk.Label(header,font=self.theme.section);self.chat_title_label.grid(row=0,column=0,sticky='w')
@@ -68,8 +73,41 @@ class BrowserMixin(AsyncBrowserMixin):
         footer=ttk.Frame(right,padding=(u(16),u(8)));footer.grid(row=4,column=0,sticky='ew');footer.columnconfigure(0,weight=1)
         self.chat_info=tk.StringVar(self.root,value='尚未打开归档');self.count_label=ttk.Label(footer,textvariable=self.chat_info,style='Hint.TLabel');self.count_label.grid(row=0,column=0,sticky='w')
         self.more_button=self.button(footer,'加载更多',lambda:self.load_messages(more=True));self.more_button.grid(row=0,column=1,sticky='e')
+        self.chat_footer=footer;footer.bind('<Configure>',self.fit_chat_footer,add='+')
+        self.contact_count.trace_add('write',lambda *_:self.schedule_contact_layout())
         self.loaded_offset=0;self.message_total=0;self.contact_rows=[]
         self.show_browser_state('no_archive')
+
+    def schedule_contact_layout(self):
+        self.layout_key=None;self.queue_layout()
+    def browser_minimums(self):
+        u=self.theme.u
+        return (max(u(180),self.contact_filter_row.winfo_reqwidth()+u(36)),
+                max(u(220),self.search_box.winfo_reqwidth()+self.date_button.winfo_reqwidth()+u(40)))
+    def fit_chat_footer(self,event=None):
+        if not hasattr(self,'chat_footer') or self.chat_footer.winfo_width()<2:return
+        from .layout_config import configure_changed
+        room=max(self.theme.u(40),self.chat_footer.winfo_width()-self.more_button.winfo_reqwidth()-self.theme.u(40))
+        configure_changed(self.count_label,wraplength=room)
+    def layout_browser_split(self):
+        if not hasattr(self,'browser_panes') or not self.browser_panes.winfo_ismapped():return
+        panes=self.browser_panes;u=self.theme.u;width=panes.winfo_width()
+        minimum,reading=self.browser_minimums()
+        key=(width,self.theme.generation,self.contacts_width,minimum,reading)
+        if key==getattr(self,'browser_split_key',None):return
+        self.browser_split_key=key
+        from .layout_config import configure_changed
+        configure_changed(panes,sashwidth=u(8),background=self.theme.palette['LINE'],proxybackground=self.theme.palette['ACCENT'])
+        if int(panes.panecget(self.conversation_column,'minsize'))!=minimum:panes.paneconfigure(self.conversation_column,minsize=minimum)
+        if int(panes.panecget(self.message_content_column,'minsize'))!=reading:panes.paneconfigure(self.message_content_column,minsize=reading)
+        target=min(u(self.contacts_width),max(minimum,width-reading-u(8)))
+        if not getattr(panes,'_split_dragging',False) and abs(panes.sash_coord(0)[0]-target)>1:panes.sash_place(0,target,0)
+    def save_browser_sash(self):
+        if not self.browser_panes.winfo_ismapped():return
+        self.contacts_width=max(140,min(2048,round(self.browser_panes.sash_coord(0)[0]/self.theme.scale)))
+        self.controller.save_browser_layout(self.contacts_width);self.browser_split_key=None
+    def reset_browser_sash(self):
+        self.contacts_width=270;self.controller.save_browser_layout(270);self.browser_split_key=None;self.layout_browser_split();return 'break'
 
     def fit_chat_title(self):
         width=self.chat_header.winfo_width()

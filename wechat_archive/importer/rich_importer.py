@@ -200,6 +200,9 @@ class RichImporter:
                         if len(old)!=1:raise ConflictError('来源消息ID存在歧义，整批回滚')
                         if old[0]['identity_strategy']=='scoped-source-id':
                             matches=old[0]['source_hash']==content_hash
+                            if not matches:
+                                from ..identity import alias_only_source_change
+                                matches=alias_only_source_change(conn,value['namespace'],row,old[0]['message_id'],old[0]['source_hash'])
                         else:
                             existing=conn.execute('SELECT sender_id,receiver_id,create_time,content,msg_type,chat_id FROM messages WHERE id=?',(old[0]['message_id'],)).fetchone()
                             expected=(users.get(row['sender_id']),users[row['receiver_id']] if definitions[row['chat_id']]['kind']=='private' else None,_time(row['create_time']),row.get('content'),'image' if row['kind']=='emoji' else row['kind'],chats[row['chat_id']])

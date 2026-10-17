@@ -44,6 +44,7 @@ class ArchiveScope:
 class ReadOnlyArchive:
     def __init__(self, path):
         self.path = _local_path(path)
+        self.version = None
         if not self.path.is_file():
             raise NotFoundError('归档不存在；请先在软件中打开已归档数据。')
         with self.connection() as connection:
@@ -52,11 +53,15 @@ class ReadOnlyArchive:
             if app_id != APPLICATION_ID or not 1 <= version <= MAX_READABLE_SCHEMA_VERSION:
                 raise ConflictError('仅支持本软件已有归档，不能打开微信原库或未知数据库。')
             validate_schema(connection, version)
+        self.version = version
 
     @contextmanager
     def connection(self):
         connection = sqlite3.connect(self.path.as_uri() + '?mode=ro', uri=True, timeout=3)
         connection.row_factory = sqlite3.Row
+        if self.version == 3:
+            from ..identity import install_identity_views
+            install_identity_views(connection);connection.commit()
         connection.execute('PRAGMA query_only=ON')
         connection.enable_load_extension(False)
         # 限制大库查询时间，不让模型调用无限占用软件。

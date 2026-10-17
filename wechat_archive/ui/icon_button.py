@@ -92,8 +92,10 @@ class IconButton(ttk.Button):
 
     def refresh_icon(self):
         if not self.winfo_exists():return
-        super().configure(padding=(self.theme.u(6),max(1,round((self.theme.control_height-self.theme.u(20))/2))))
-        color=self.theme.palette['MUTED' if self.instate(['disabled']) else 'ACCENT' if self.toggled else 'INK']
+        from .layout_config import configure_changed
+        configure_changed(self,padding=(self.theme.u(6),max(1,round((self.theme.control_height-self.theme.u(20))/2))))
+        custom=getattr(self,'toggled_color',None)
+        color=self.theme.palette['MUTED'] if self.instate(['disabled']) else ((custom() if callable(custom) else custom) or self.theme.palette['ACCENT']) if self.toggled else self.theme.palette['INK']
         size=self.theme.u(20);key=(self.icon,color,size)
         if key==self.icon_key:return
         self.icon_key=key

@@ -33,7 +33,6 @@ AI设置|AI settings
 随机打捞一条回忆|A random memory
 回到原文|Open original
 复制这条回忆|Copy this memory
-文字小工坊|Text workshop
 取当前选中文字|Use selected text
 清理行尾空格|Trim line endings
 复制整理结果|Copy edited text

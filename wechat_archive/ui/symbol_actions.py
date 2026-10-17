@@ -8,35 +8,88 @@ def action_icon(text):
 
 class HoverHint:
     def __init__(self,widget,theme):
-        self.widget=widget;self.theme=theme;self.job=None;self.tip=None
-        for event in ('<Enter>','<FocusIn>'):widget.bind(event,self.schedule,add='+')
-        for event in ('<Leave>','<FocusOut>','<Button-1>','<Destroy>'):widget.bind(event,self.hide,add='+')
+        self.widget=widget;self.theme=theme;self.job=None;self.tip=None;self.layout_job=None;self.owner_binding=None;self.hovering=False
+        widget.bind('<Enter>',self.enter,add='+');widget.bind('<FocusIn>',self.schedule,add='+')
+        widget.bind('<Leave>',self.leave,add='+');widget.bind('<FocusOut>',self.focus_out,add='+')
+        for event in ('<Button-1>','<Escape>','<Unmap>','<Destroy>'):widget.bind(event,self.hide,add='+')
+
+    def enter(self,event=None):self.hovering=True;self.schedule(event)
+    def leave(self,event=None):self.hovering=False;self.hide(event)
+    def focus_out(self,event=None):
+        if not self.hovering:self.hide(event)
+
     def schedule(self,event=None):
-        self.hide();self.job=self.widget.after(300,self.show)
+        if self.job or self.tip is not None:return
+        self.job=self.widget.after(300,self.show)
+
     def show(self):
+        if self.job:
+            try:self.widget.after_cancel(self.job)
+            except tk.TclError:pass
         self.job=None;w=self.widget
-        if not w.winfo_ismapped():return
+        if self.tip is not None or not w.winfo_viewable():return
+        active=getattr(self.theme,'active_hover_hint',None)
+        if active is not None and active is not self:active.hide()
         text=getattr(w,'symbol_hint',None) or str(w.cget('text'))
         if callable(text):text=text()
         extra=getattr(w,'tooltip_extra','')
         if extra:text+='\n'+(extra() if callable(extra) else extra)
-        self.tip=tk.Toplevel(w);self.tip.overrideredirect(True);self.tip.attributes('-topmost',True)
+        tip=self.tip=tk.Toplevel(w);tip.withdraw();tip.overrideredirect(True);tip.attributes('-topmost',True)
+        self.theme.active_hover_hint=self
+        if hasattr(w,'tip'):w.tip=tip
+        outer=self.theme.palette['SIDEBAR']
+        if tip.tk.call('tk','windowingsystem')=='win32':
+            outer='#fe00fe';tip.configure(background=outer);tip.attributes('-transparentcolor',outer)
+            self.no_activate(tip)
         from .rounded import RoundedSurface
-        surface=RoundedSurface(self.tip,self.theme,self.theme.palette['PAPER'],self.theme.palette['HOVER'],outline=self.theme.palette['LINE'],radius=8,padding=8);surface.pack()
-        label=tk.Label(surface.content,text=text,background=self.theme.palette['HOVER'],foreground=self.theme.palette['INK'],font=self.theme.small,padx=3,pady=1,justify='left',wraplength=self.theme.u(320));label.pack()
-        label.update_idletasks();surface.configure(width=label.winfo_reqwidth()+surface.padding*2)
-        self.tip.update_idletasks();x=max(0,min(w.winfo_rootx(),w.winfo_screenwidth()-self.tip.winfo_reqwidth()-8));y=min(w.winfo_rooty()+w.winfo_height()+5,w.winfo_screenheight()-self.tip.winfo_reqheight()-8)
-        self.tip.geometry(f'+{x}+{max(0,y)}')
-    def hide(self,event=None):
-        if self.job:
-            try:self.widget.after_cancel(self.job)
-            except tk.TclError:pass
-            self.job=None
-        if self.tip:
-            try:self.tip.destroy()
-            except tk.TclError:pass
-            self.tip=None
+        surface=RoundedSurface(tip,self.theme,outer,self.theme.palette['HOVER'],outline=self.theme.palette['LINE'],radius=8,padding=8);surface.pack()
+        label=tk.Label(surface.content,text=text,background=self.theme.palette['HOVER'],foreground=self.theme.palette['INK'],font=self.theme.small,padx=3,pady=1,justify='left',wraplength=min(self.theme.u(320),max(80,w.winfo_screenwidth()-48)));label.pack()
+        width=label.winfo_reqwidth()+surface.padding*2;height=label.winfo_reqheight()+surface.padding*2
+        surface.configure(width=width,height=height)
+        def place():
+            self.layout_job=None
+            if self.tip is not tip or not w.winfo_viewable():return
+            screen_w,screen_h=w.winfo_screenwidth(),w.winfo_screenheight();gap=self.theme.u(8)
+            wx,wy,ww,wh=w.winfo_rootx(),w.winfo_rooty(),w.winfo_width(),w.winfo_height()
+            # Place beside the rail, never over its hover target or beyond the screen.
+            x=wx+ww+gap if wx+ww+gap+width<=screen_w-gap else wx-width-gap
+            y=wy+(wh-height)//2;x=max(gap,min(x,screen_w-width-gap));y=max(gap,min(y,screen_h-height-gap))
+            tip.geometry(f'{width}x{height}+{x}+{y}');tip.deiconify()
+        self.layout_job=w.after_idle(place)
+        owner=w.winfo_toplevel()
+        def changed(event):
+            if event.widget is owner:self.hide()
+        self.owner_binding=(owner,owner.bind('<Configure>',changed,add='+'))
 
+    @staticmethod
+    def no_activate(tip):
+        import ctypes as c
+        try:
+            user=c.WinDLL('user32',use_last_error=True)
+            user.GetParent.argtypes=[c.c_void_p];user.GetParent.restype=c.c_void_p
+            get=getattr(user,'GetWindowLongPtrW',user.GetWindowLongW);set_=getattr(user,'SetWindowLongPtrW',user.SetWindowLongW)
+            get.argtypes=[c.c_void_p,c.c_int];get.restype=c.c_ssize_t;set_.argtypes=[c.c_void_p,c.c_int,c.c_ssize_t];set_.restype=c.c_ssize_t
+            hwnd=user.GetParent(tip.winfo_id())
+            if hwnd:set_(hwnd,-20,get(hwnd,-20)|0x08000000|0x00000080)
+        except (AttributeError,OSError):pass
+
+    def hide(self,event=None):
+        for name in ('job','layout_job'):
+            job=getattr(self,name)
+            if job:
+                try:self.widget.after_cancel(job)
+                except tk.TclError:pass
+                setattr(self,name,None)
+        if self.owner_binding:
+            owner,binding=self.owner_binding;self.owner_binding=None
+            try:owner.unbind('<Configure>',binding)
+            except tk.TclError:pass
+        tip=self.tip;self.tip=None
+        if getattr(self.theme,'active_hover_hint',None) is self:self.theme.active_hover_hint=None
+        if hasattr(self.widget,'tip'):self.widget.tip=None
+        if tip is not None:
+            try:tip.destroy()
+            except tk.TclError:pass
 
 def symbolize(button,theme):
     if button.winfo_class() not in ('TButton','TCheckbutton') or hasattr(button,'icon') or getattr(button,'_keep_caption',False):return

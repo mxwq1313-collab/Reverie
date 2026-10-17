@@ -82,8 +82,7 @@ class ForwardMessage(tk.Frame):
         key=(self.winfo_width(),self.theme.generation,len(self.rendered))
         if event is not None and key==self.fit_key:return
         self.fit_key=key
-        if self.resize_job:self.after_cancel(self.resize_job)
-        self.resize_job=self.after(40,self.fit)
+        if not self.resize_job:self.resize_job=self.after_idle(self.fit)
 
     def release_measure(self):
         if self.measure is not None:
@@ -173,8 +172,6 @@ class ForwardMessage(tk.Frame):
         if not self.expanded:return
         if not self.timeline.canvas.winfo_ismapped() or self.timeline.app.current_page!='聊天归档':
             self.needs_fit=True;return
-        if time.monotonic()<getattr(self.timeline,'resizing_until',0):
-            self.resize_job=self.after(80,self.fit);return
         if not self.winfo_exists() or not self.expanded:return
         self.needs_fit=False;self.update_visible(schedule=False)
         expected=max(u(100),self.winfo_width()-(2*u(1)+2*u(12)+2*u(10)))

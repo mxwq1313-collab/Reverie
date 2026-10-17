@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wechat-archive"
-version = "2.2.2"
+version = "2.2.3"
 description = "思绪 · 本地聊天归档：真实 Windows 微信结构化导出接入和私聊文本导入"
 readme = "README.md"
 requires-python = ">=3.10"

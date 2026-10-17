@@ -14,29 +14,28 @@ ZONE = timezone(timedelta(hours=8))
 class ToolboxPanel:
     def __init__(self, app):
         self.app=app;self.row=None;self.bound=None;self.views={};self.active=None
-        self.capsule=MemoryTool(self,'时光胶囊','date');self.random=MemoryTool(self,'随机回忆','random');self.workshop=TextWorkshop(self)
-        self.date=self.capsule.start;self.text=self.workshop.text;self.metrics=self.workshop.metrics
+        self.capsule=MemoryTool(self,'时光胶囊','date');self.random=MemoryTool(self,'随机回忆','random')
+        self.date=self.capsule.start
         self.memory=self.capsule.memory;self.scope=self.capsule.scope
 
     def frame(self,name,hint):
         app=self.app
-        parent=app.memory_content if name=='随机回忆' else app.capsule_content if name=='时光胶囊' else app.pages[name]
+        parent=app.capsule_content if name=='时光胶囊' else app.pages[name]
         frame=ttk.Frame(parent);frame.pack(fill='both',expand=True);self.views[name]=frame
         if name=='随机回忆':return frame
         ttk.Label(frame,text=name,font=app.theme.section).pack(anchor='w',pady=(0,app.theme.u(8)))
-        if name=='文字小工坊':return frame
         ttk.Label(frame,text=hint,style='Hint.TLabel',wraplength=app.theme.u(450)).pack(anchor='w',pady=(0,app.theme.u(8)))
         return frame
 
     def activate(self,name):
-        if name=='随机回忆':return
         if name not in self.views:name=None
         if name==getattr(self,'visible_view',False):return
         for key,frame in self.views.items():
-            if key!='随机回忆':frame.pack_forget()
+            frame.pack_forget()
         self.visible_view=name;self.active=name
         if name is not None:
             frame=self.views[name];frame.pack(fill='both',expand=True);self.app.theme.apply_tree(frame)
+            if name=='随机回忆':self.random.refresh_context()
 
     def open_tool(self,name,navigate=True):
         if name not in self.views:raise ValueError('未知工具')
@@ -52,10 +51,6 @@ class ToolboxPanel:
     def valid_memory(self):return (self.capsule if self.memory is self.capsule.memory else self.random).valid()
     def open_original(self):(self.capsule if self.memory is self.capsule.memory else self.random).open_original()
     def copy_memory(self):(self.capsule if self.memory is self.capsule.memory else self.random).copy()
-    def count(self,event=None):self.workshop.count()
-    def clean(self):self.workshop.transform('trim')
-    def copy_text(self):self.workshop.copy()
-    def take_selection(self):self.workshop.take_selection()
 
 
 class MemoryTool:
@@ -277,96 +272,3 @@ class MemoryTool:
         self.history=[];self.seen=[];self.cursor=-1;self.row=None;self.bound=None
         self.update_controls()
         if not quiet:self.display(None);self.summary.set('回看记录已清空');self.app.status.set('已清空本工具中的回看记录。')
-
-
-class TextWorkshop:
-    def __init__(self,box):
-        self.box=box;self.app=app=box.app;u=app.theme.u
-        page=box.frame('文字小工坊','整理手边的文字，可撤销、可保存；归档原文保持完整。')
-        actions=ActionRow(page,app.theme)
-        for label,command in (('取当前选中文字',self.take_selection),('打开文本文件',self.load),('保存为文本',self.save),('复制整理结果',self.copy),('查找与替换',self.open_find)):
-            actions.add(app.button(actions,label,command))
-        self.text=ScrolledText(page,height=7,wrap='word',font=app.theme.body,undo=True,maxundo=100,autoseparators=True)
-        app.theme.text_surface(self.text,editable=True,framed=True);self.text.pack(fill='both',expand=True,pady=u(10))
-        self.metrics=tk.StringVar(page);self.metrics_label=ttk.Label(page,textvariable=self.metrics,style='Hint.TLabel');self.metrics_label.pack(anchor='w')
-        actions=ActionRow(page,app.theme)
-        for label,kind in (('清理行尾空格','trim'),('合并多余空行','blank'),('清空输入','clear')):actions.add(app.button(actions,label,lambda mode=kind:self.transform(mode)))
-        actions.add(app.button(actions,'撤销',lambda:self.undo(False)));actions.add(app.button(actions,'重做',lambda:self.undo(True)))
-        self.metrics_label.pack_configure(side='bottom',before=self.text.frame)
-        actions.pack_configure(side='bottom',before=self.text.frame)
-        self.find=tk.StringVar(page);self.replacement=tk.StringVar(page);self.ignore_case=tk.BooleanVar(page)
-        self.find_window=None;self.text.bind('<Control-h>',lambda _:self.open_find())
-        self.job=None;self.text.bind('<<Modified>>',self.modified);self.text.bind('<Destroy>',self.destroyed,add='+');self.count()
-    def open_find(self):
-        app=self.app;u=app.theme.u
-        if self.find_window is not None and self.find_window.winfo_exists():
-            self.find_window.deiconify();self.find_window.lift();self.find_entry.focus_set();return 'break'
-        window=tk.Toplevel(app.root);self.find_window=window;window.title(app.tr('查找与替换'));window.transient(app.root)
-        window.protocol('WM_DELETE_WINDOW',window.withdraw);window.bind('<Escape>',lambda _:window.withdraw())
-        body=ttk.Frame(window,padding=u(20));body.pack(fill='both',expand=True);body.columnconfigure(1,weight=1)
-        for index,(label,var) in enumerate((('查找',self.find),('替换为',self.replacement))):
-            ttk.Label(body,text=label).grid(row=index,column=0,sticky='w',padx=(0,u(12)),pady=u(6))
-            entry=ttk.Entry(body,textvariable=var,width=26);entry.grid(row=index,column=1,sticky='ew',pady=u(6))
-            if index==0:self.find_entry=entry;entry.bind('<Return>',lambda _:self.replace(False))
-        actions=ttk.Frame(body);actions.grid(row=2,column=0,columnspan=2,sticky='ew',pady=u(10))
-        app.button(actions,'查找全部',lambda:self.replace(False)).pack(side='left',padx=(0,u(8)))
-        app.button(actions,'替换全部',lambda:self.replace(True)).pack(side='left')
-        ttk.Checkbutton(body,text='忽略英文字母大小写',variable=self.ignore_case).grid(row=3,column=0,columnspan=2,sticky='w')
-        app.theme.apply_tree(window);app.localizer.apply(window,());self.find_entry.focus_set()
-        return 'break'
-
-    def destroyed(self,event):
-        if event.widget is self.text and self.job:self.app.root.after_cancel(self.job);self.job=None
-    def modified(self,event=None):
-        if not self.text.edit_modified():return
-        self.text.edit_modified(False)
-        if self.job:self.app.root.after_cancel(self.job)
-        self.job=self.app.root.after(120,self.count)
-    def count(self):
-        if self.job:self.app.root.after_cancel(self.job);self.job=None
-        value=self.text.get('1.0','end-1c');chinese=len(re.findall('[\u4e00-\u9fff]',value));words=len(re.findall('[A-Za-z]+',value));lines=len(value.splitlines()) if value else 0
-        self.metrics.set(f'{len(value):,} 字符 · {chinese:,} 汉字 · {words:,} 英文单词 · {lines:,} 行');self.text.edit_modified(False)
-    def set_text(self,value):
-        self.text.edit_separator();self.text.configure(autoseparators=False)
-        try:self.text.delete('1.0','end');self.text.insert('1.0',value)
-        finally:self.text.edit_separator();self.text.configure(autoseparators=True)
-        self.count()
-    def transform(self,mode):
-        value=self.text.get('1.0','end-1c')
-        result='\n'.join(line.rstrip() for line in value.split('\n')) if mode=='trim' else re.sub(r'\n[\t ]*\n(?:[\t ]*\n)+','\n\n',value) if mode=='blank' else ''
-        self.set_text(result);self.app.status.set({'trim':'已清理行尾空格。','blank':'已合并多余空行。','clear':'输入已清空，可以撤销。'}[mode])
-    def undo(self,redo):
-        try:(self.text.edit_redo if redo else self.text.edit_undo)();self.count();self.app.status.set('已重做。' if redo else '已撤销。')
-        except tk.TclError:self.app.status.set('没有可以重做的操作。' if redo else '没有可以撤销的操作。')
-    def replace(self,apply):
-        word=self.find.get()
-        if not word:self.app.status.set('请先输入查找文字。');return
-        value=self.text.get('1.0','end-1c');pattern=re.compile(re.escape(word),re.I if self.ignore_case.get() else 0);matches=list(pattern.finditer(value))
-        self.text.tag_remove('workshop_find','1.0','end')
-        if apply:
-            replacement=self.replacement.get();self.set_text(pattern.sub(lambda _:replacement,value))
-        else:
-            self.text.tag_configure('workshop_find',background=self.app.theme.palette['SELECTED'])
-            for match in matches[:5000]:self.text.tag_add('workshop_find',f'1.0+{match.start()}c',f'1.0+{match.end()}c')
-            if matches:self.text.see(f'1.0+{matches[0].start()}c')
-        self.app.status.set(f"{'已替换' if apply else '找到'} {len(matches):,} 处。"+('前5000处已高亮。' if len(matches)>5000 and not apply else ''))
-    def copy(self):
-        value=self.text.get('1.0','end-1c')
-        if not value:self.app.status.set('请先输入需要复制的文字。');return
-        self.app.root.clipboard_clear();self.app.root.clipboard_append(value);self.app.status.set('整理结果已复制。')
-    def take_selection(self):
-        for widget in self.app.chat_text.selectable_texts():
-            if widget.tag_ranges('sel'):self.set_text(widget.get('sel.first','sel.last'));self.box.open_tool('文字小工坊');self.app.status.set('选中文字已放入文字工坊。');return
-        self.app.status.set('请先在聊天归档中选中一段文字。')
-    def load(self):
-        path=filedialog.askopenfilename(parent=self.app.root,title='打开UTF-8文本',filetypes=[('文本文件','*.txt'),('所有文件','*.*')])
-        if not path:return
-        try:
-            if Path(path).stat().st_size>1024*1024:raise ValueError('文本超过1MiB，请缩小后打开。')
-            self.set_text(Path(path).read_text(encoding='utf-8-sig'));self.app.status.set('文本已打开。')
-        except (OSError,ValueError) as error:self.app.status.set('文本未打开：'+str(error))
-    def save(self):
-        path=filedialog.asksaveasfilename(parent=self.app.root,title='保存整理结果',defaultextension='.txt',filetypes=[('UTF-8文本','*.txt')])
-        if not path:return
-        try:Path(path).write_text(self.text.get('1.0','end-1c'),encoding='utf-8');self.app.status.set('整理结果已保存。')
-        except OSError as error:self.app.status.set('保存未完成：'+str(error))

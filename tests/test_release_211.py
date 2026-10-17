@@ -52,10 +52,6 @@ class Release211UITests(unittest.TestCase):
         text=control.rendered[0][2];self.assertEqual(text.get('1.0','end-1c'),'消息0 原文[流泪]');self.assertEqual(len(text.image_names()),1)
         text.tag_add('sel','1.0','1.3');self.app.chat_text.copy_selection(text);self.assertEqual(self.root.clipboard_get(),'消息0')
         control.menu.invoke(1);self.assertEqual(self.root.clipboard_get(),row['content']);self.assertEqual(self.errors,[])
-    def test_forward_selection_can_be_used_by_the_text_workshop(self):
-        _,control=self.forward();control.toggle();self.settle(lambda:len(control.rendered)==10 and not control.resize_job)
-        text=control.rendered[0][2];text.tag_add('sel','1.0','end-1c');self.app.toolbox_panel.workshop.take_selection()
-        self.assertEqual(self.app.toolbox_panel.text.get('1.0','end-1c'),'消息0 原文[流泪]');self.assertEqual(self.app.current_subpage,'文字小工坊')
 
     def test_paged_expand_collapse_and_reopen_cancel_pending_jobs(self):
         _,control=self.forward(125);control.toggle();self.settle(lambda:len(control.rendered)==20 and not control.resize_job)
@@ -100,12 +96,12 @@ class Release211UITests(unittest.TestCase):
         self.assertNotEqual(app.capsule_button.icon,app.nav_note.icon);self.assertIsNone(app.agent_panel.client)
     def test_workshop_is_tool_tab_and_random_memory_is_a_small_utility(self):
         self.show();app=self.app;app.show_page('随机回忆');self.root.update()
-        self.assertNotIn('随机回忆',app.tab_routes);self.assertTrue(app.memory_popup.window.winfo_ismapped())
-        for name in ('文字小工坊',):
+        self.assertIn('随机回忆',app.tab_routes);self.assertTrue(app.toolbox_panel.random.memory.winfo_ismapped())
+        for name in ('随机回忆',):
             app.show_page(name);self.root.update();self.assertEqual(app.current_page,'工具与设置')
             notebook,tab=app.tab_routes[name];self.assertIs(notebook,app.tools_notebook);self.assertEqual(notebook.select(),str(tab));self.assertTrue(app.toolbox_panel.views[name].winfo_ismapped())
     def test_all_peer_tabs_remain_reachable_with_large_text_and_narrow_window(self):
-        self.show(900,700);app=self.app;app.show_page('文字小工坊');app.theme.update(24,app.theme.family,app.theme.mode,'zh_CN',48);app.adapt_layout();self.root.update();app.fit_tool_tabs();self.root.update()
+        self.show(900,700);app=self.app;app.show_page('随机回忆');app.theme.update(24,app.theme.family,app.theme.mode,'zh_CN',48);app.adapt_layout();self.root.update();app.fit_tool_tabs();self.root.update()
         found=set();notebook=app.tools_notebook
         for x in range(1,notebook.winfo_width(),3):
             try:found.add(notebook.index(f'@{x},{app.theme.u(15)}'))
@@ -119,7 +115,7 @@ class Release211UITests(unittest.TestCase):
     def test_version_and_replacement_logo_asset(self):
         from wechat_archive import __version__
         from wechat_archive.ui.app_logo import original
-        self.assertEqual(__version__,'2.2.2');metadata=json.loads((Path(__file__).resolve().parents[1]/'wechat_archive/ui/assets/app_logo.json').read_text(encoding='utf-8'))
+        self.assertEqual(__version__,'2.2.3');metadata=json.loads((Path(__file__).resolve().parents[1]/'wechat_archive/ui/assets/app_logo.json').read_text(encoding='utf-8'))
         self.assertEqual(metadata['name'],'思绪缠结的可爱猫咪');self.assertEqual(hashlib.sha256(original()).hexdigest(),metadata['sha256'])
 
 

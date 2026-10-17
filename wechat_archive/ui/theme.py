@@ -47,10 +47,12 @@ class Theme:
         def mapped(event):
             if self.action_maps_closed:return
             try:
+                if getattr(event.widget,'_map_theme_generation',None)==self.generation and not getattr(event.widget,'_pending_theme',None):return
                 self.prepare(event.widget)
                 self.scope_font(event.widget,event.widget.winfo_class())
                 from .symbol_actions import symbolize
                 symbolize(event.widget,self)
+                event.widget._map_theme_generation=self.generation
             except (AttributeError,TclError):pass
         self.action_map_job=root.bind_all('<Map>',mapped,add='+')
         self.wheel_router=WheelRouter(root,self.scale);self.wheel_router.pixels=self.u(wheel_speed)
@@ -203,7 +205,14 @@ class Theme:
                 elif mark=='bottom' and state=='selected':picture.put(ACCENT,to=(0,size-u(2),size,size))
                 images.append((state,picture))
             borders=(u(2),edge,edge,edge) if mark=='left' else (edge,edge,edge,u(2)) if mark in ('bottom','line','shadow','focusline') else edge
-            style.element_create(name+suffix,'image',normal,*images,border=borders,padding=0,sticky='nswe')
+            # ttk tiles small image centers with a GDI transfer for every tile.
+            # Expand complete tile periods once; retain all borders and size minima.
+            from .control_textures import prepare_texture
+            minimum=(normal.width(),normal.height())
+            normal=prepare_texture(normal,borders,self.root)
+            images=[(state,prepare_texture(picture,borders,self.root)) for state,picture in images]
+            self.images.extend([normal,*[picture for _,picture in images]])
+            style.element_create(name+suffix,'image',normal,*images,border=borders,padding=0,sticky='nswe',width=minimum[0],height=minimum[1])
         def button(style_name,element_name):
             style.layout(style_name,[(element_name+suffix,{'sticky':'nswe','children':[
                 ('Button.padding',{'sticky':'nswe','children':[('Button.label',{'sticky':'nswe'})]})]})])
@@ -349,6 +358,7 @@ class Theme:
             if parent.winfo_class()=='Menu':
                 parent.configure(background=self.palette['PAPER'],foreground=self.palette['INK'],activebackground=self.palette['SELECTED'],activeforeground=self.palette['INK'],relief='flat',borderwidth=0,font=self.body)
         except tk.TclError:pass
+        parent._map_theme_generation=self.generation
         for child in parent.winfo_children():self.apply_tree(child,old_fonts,ai)
 
     def mapped_font(self,description,old_fonts):
@@ -379,6 +389,7 @@ class Theme:
 
     def close(self):
         self.action_maps_closed=True
+        if getattr(self,'active_hover_hint',None):self.active_hover_hint.hide()
         self.wheel_router.close()
         for picture in self.images:
             self.root.tk.call('image','delete',str(picture))

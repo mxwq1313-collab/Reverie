@@ -27,7 +27,7 @@ class WorkspaceRefreshTests(unittest.TestCase):
         self.assertEqual(self.app.current_page,'设置')
         self.assertEqual(self.app.settings_notebook.select(),str(self.app.tab_routes['报告与设置'][1]))
         labels=[self.app.tools_notebook.tab(x,'text') for x in self.app.tools_notebook.tabs()]
-        self.assertEqual(labels,['归档管理','语义检索','文字小工坊'])
+        self.assertEqual(labels,['归档管理','语义检索','随机回忆'])
     def test_markdown_and_compact_references_preserve_raw_unicode_and_copy(self):
         panel=self.app.agent_panel
         raw='## 标题\n\n- **重点**：中文😀[消息 #1][消息 #2]\n\n`code`\n\n```python\n**原样代码**\n```'
@@ -107,22 +107,20 @@ class WorkspaceRefreshTests(unittest.TestCase):
         self.assertIn('私聊',panel.scope_text.get());self.assertNotIn('#-1',panel.scope_text.get())
         self.assertIn('disabled',panel.sync_button.state())
 
-    def test_workshop_counts_cleans_and_copies_without_archive_write(self):
-        app=self.app;box=app.toolbox_panel;before=self.path.read_bytes()
-        box.text.insert('1.0','你好 hello  \n世界 world\t');box.count();self.assertIn('4 汉字',box.metrics.get());self.assertIn('2 英文单词',box.metrics.get())
-        box.clean();box.copy_text();self.assertEqual(self.root.clipboard_get(),'你好 hello\n世界 world');self.assertEqual(self.path.read_bytes(),before)
     def test_pointer_and_keyboard_receipts_use_actual_action_result(self):
         self.show();app=self.app;app.show_page('随机回忆');self.root.update()
         button=app.button(app.toolbox_panel.views['随机回忆'],'测试复制',lambda:app.status.set('内容已复制。'));button.pack();app.theme.apply_tree(button);self.root.update()
         button.event_generate('<ButtonPress-1>',x=4,y=4);button.event_generate('<ButtonRelease-1>',x=4,y=4);self.root.update()
-        self.assertEqual(app.feedback.message,'内容已复制。');self.assertTrue(app.feedback.frame.winfo_ismapped())
-        app.ui_settings['reduce_motion']=True;app.feedback.show('请选择会话。');self.assertEqual(app.feedback.tone,'attention');self.assertTrue(app.feedback.frame.winfo_ismapped())
-    def test_feedback_stays_above_the_narrow_codex_drawer(self):
+        self.assertEqual(app.status.get(),'内容已复制。');self.assertFalse(hasattr(app.feedback,'frame'))
+        app.ui_settings['reduce_motion']=True;app.feedback.show('请选择会话。');self.assertEqual(app.feedback.tone,'attention');self.assertFalse(hasattr(app.feedback,'frame'))
+    def test_status_remains_in_footer_with_narrow_codex_drawer(self):
         self.show(900,700);self.root.attributes('-topmost',True);self.root.focus_force();app=self.app
         app.open_copilot(False);self.root.update();app.adapt_layout();self.root.update()
-        self.assertEqual(app.copilot_mode,'drawer');app.feedback.show('操作反馈在窄窗口中仍然可见。');self.root.update()
-        label=app.feedback.label;x=label.winfo_rootx()+label.winfo_width()//2;y=label.winfo_rooty()+label.winfo_height()//2
-        self.assertIs(self.root.winfo_containing(x,y),label)
+        self.assertEqual(app.copilot_mode,'drawer');app.feedback.show('操作结果仅在状态栏中显示。');self.root.update()
+        self.assertFalse(hasattr(app.feedback,'frame'));label=app.status_label;x=label.winfo_rootx()+label.winfo_width()//2;y=label.winfo_rooty()+label.winfo_height()//2
+        self.assertTrue(label.winfo_viewable())
+        self.assertGreaterEqual(label.winfo_rooty(),self.root.winfo_rooty())
+        self.assertLessEqual(label.winfo_rooty()+label.winfo_height(),self.root.winfo_rooty()+self.root.winfo_height())
 
     def test_resize_burst_defers_body_width_and_reuses_scrollbar_items(self):
         self.show();view=self.app.chat_text;self.settle(lambda:not view.reflow_busy and not view.layout_job)

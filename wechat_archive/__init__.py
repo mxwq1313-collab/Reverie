@@ -5,7 +5,7 @@ from .errors import ArchiveError, ConflictError, NotFoundError, ValidationError
 from .models import Message, User
 from .services import ChatService
 
-__version__ = "2.2.2"
+__version__ = "2.2.3"
 __all__ = [
     "ArchiveError", "ChatService", "ConflictError", "Database", "Message",
     "NotFoundError", "User", "ValidationError",

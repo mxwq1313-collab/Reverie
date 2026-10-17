@@ -16,6 +16,7 @@ class PowerPopover:
         self.surface=RoundedSurface(popup,t,outer,p['PAPER'],outline=p['LINE'],radius=14,padding=10);self.surface.pack(fill='both',expand=True)
         form=self.surface.content;form.columnconfigure(0,minsize=u(34));form.columnconfigure(1,weight=1);form.columnconfigure(2,minsize=u(34))
         panel.fast_button=self.app.icon(form,'fast','快速模式',lambda:panel.fast_mode.set(not panel.fast_mode.get()),'Quiet.TButton');panel.fast_button.grid(row=0,column=0,rowspan=2,sticky='n')
+        panel.fast_button.toggled_color=lambda:'#c4b5fd' if self.app.theme.active_mode=='dark' else '#8b5cf6'
         panel.fast_button.tooltip_extra=lambda:self.app.tr('下一次发送起生效；服务端按账号和模型处理。')
         self.title=tk.Label(form,font=t.name,background=p['PAPER'],foreground=p['ACCENT']);self.title.grid(row=0,column=1,sticky='ew')
         self.model_button=ttk.Button(form,command=self.show_models,style='PowerModel.TButton',width=1);self.model_button.grid(row=1,column=1,sticky='ew')
@@ -50,14 +51,14 @@ class PowerPopover:
     def refresh(self):
         self.job=None
         if not self.alive:return
-        panel=self.panel;t=self.app.theme;p=t.palette;u=t.u;blue=p['ACCENT']
+        panel=self.panel;t=self.app.theme;p=t.palette;u=t.u;fast=panel.fast_mode.get();blue=('#c4b5fd' if t.active_mode=='dark' else '#8b5cf6') if fast else p['ACCENT']
         self.title.configure(text=self.app.tr(self.levels()[self.current_index()]),font=t.name,foreground=blue,background=p['PAPER'])
         model=panel.model.get().split(' · ')[0]
         if panel.model.get()==AUTO_MODEL:
             model=next((x['displayName'] for x in panel.model_catalog if x['model']==panel.selected_model()),self.app.tr(AUTO_MODEL))
         self.model_button.configure(text=t.elide(model,max(u(100),self.surface.winfo_width()-u(100)),True)+'  ›')
         self.slider.configure(background=p['PAPER']);self.slider.delete('all');width=max(u(60),self.slider.winfo_width());left=u(12);right=width-u(12);top=u(7);bottom=u(29);radius=u(11)
-        self.slider.create_polygon(rounded_points(right-left,bottom-top,radius),fill=p['SELECTED'],outline='',tags='track');self.slider.move('track',left,top)
+        self.slider.create_polygon(rounded_points(right-left,bottom-top,radius),fill=('#38284f' if t.active_mode=='dark' else '#ede9fe') if fast else p['SELECTED'],outline='',tags='track');self.slider.move('track',left,top)
         steps=len(self.levels());index=self.current_index();x=left+(right-left)*index/max(1,steps-1)
         if index:
             self.slider.create_polygon(rounded_points(max(u(22),x-left),bottom-top,radius),fill=blue,outline='',tags='fill');self.slider.move('fill',left,top)
@@ -66,16 +67,29 @@ class PowerPopover:
         self.slider.create_oval(x-u(12),u(6),x+u(12),u(30),fill=p['PAPER'],outline=p['LINE'],width=u(1),tags='thumb')
         self.paint_effect()
         panel.fast_button.toggled=panel.fast_mode.get();panel.fast_button.refresh_icon()
+        if fast and self.popup.winfo_ismapped():self.start_effect()
+        elif getattr(self,'animation_fast',False):self.stop_effect();self.animation_fast=False;self.paint_effect()
     def hover(self,value):self.hovering=value;self.paint_effect()
     def paint_effect(self):
         if not self.alive:return
-        self.slider.delete('sparkle');t=self.app.theme;u=t.u
+        self.slider.delete('sparkle');t=self.app.theme;u=t.u;reduced=self.app.ui_settings['reduce_motion']
         left=u(12);right=max(u(60),self.slider.winfo_width())-u(12)
         index=self.current_index();x=left+(right-left)*index/max(1,len(self.levels())-1)
+        if self.panel.fast_mode.get():
+            span=max(u(8),right-left-u(12));center=(left+right)/2 if reduced else left+u(6)+span*self.phase
+            color='#e9ddff' if t.active_mode=='dark' else '#c4b5fd'
+            if reduced:
+                import math
+                blend=(1+math.sin(self.phase*math.tau))/2
+                low=(139,92,246) if t.active_mode!='dark' else (166,138,235);high=(196,181,253)
+                color='#'+''.join(f'{round(a+(b-a)*blend):02x}' for a,b in zip(low,high))
+                self.slider.itemconfigure('fill',fill=color)
+            self.slider.create_line(max(left+u(4),center-u(22)),u(18),min(right-u(4),center+u(22)),u(18),fill=color,width=u(5),tags=('sparkle','fast_pulse' if reduced else 'fast_flow'))
+            self.slider.create_line(max(left+u(4),center-u(8)),u(18),min(right-u(4),center+u(8)),u(18),fill='#ffffff',width=u(2),tags=('sparkle','fast_pulse' if reduced else 'fast_flow'))
         if self.hovering:
             self.slider.create_oval(x-u(13),u(5),x+u(13),u(31),outline='#759ce1' if t.active_mode=='dark' else '#bad2ff',width=u(2),tags='sparkle')
         span=x-left-u(18)
-        if span>u(8):
+        if span>u(8) and not reduced:
             for number in range(6):
                 drift=(self.phase+number*.173)%1;px=left+u(5)+span*drift;py=u(13+(number*7)%9)
                 color='#f5f9ff' if (self.phase+number*.13)%1<.45 else '#bfd6ff';radius=u(1)
@@ -85,14 +99,14 @@ class PowerPopover:
                     self.slider.create_line(px,py-u(2),px,py+u(2),fill=color,tags='sparkle')
         if self.slider.find_withtag('thumb'):self.slider.tag_lower('sparkle','thumb')
     def start_effect(self):
-        self.stop_effect()
-        if self.app.ui_settings['reduce_motion']:self.paint_effect();return
+        self.stop_effect();self.animation_fast=self.panel.fast_mode.get()
+        if self.app.ui_settings['reduce_motion'] and not self.panel.fast_mode.get():self.paint_effect();return
         self.animation_job=self.root.after_idle(self.animate)
     def animate(self):
         self.animation_job=None
-        if not self.alive or not self.popup.winfo_ismapped() or self.app.ui_settings['reduce_motion']:return
-        self.phase=(self.phase+.025)%1;self.paint_effect()
-        self.animation_job=self.root.after(240 if self.app.ui_settings['reduce_motion'] else 80,self.animate)
+        if not self.alive or not self.popup.winfo_ismapped() or self.app.ui_settings['reduce_motion'] and not self.panel.fast_mode.get():return
+        self.phase=(self.phase+(.045 if self.panel.fast_mode.get() else .025))%1;self.paint_effect()
+        self.animation_job=self.root.after(120 if self.app.ui_settings['reduce_motion'] else 33 if self.panel.fast_mode.get() else 80,self.animate)
     def stop_effect(self,event=None):
         if event is not None and event.widget is not self.popup:return
         if self.animation_job:self.root.after_cancel(self.animation_job);self.animation_job=None

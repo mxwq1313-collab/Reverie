@@ -128,11 +128,11 @@ class AgentPanel(HistoryMixin,ModelControls):
         if self.closed:return
         if event is not None and getattr(self,'dialogue_width',None)==event.width:return
         if event is not None:self.dialogue_width=event.width
-        if getattr(self,'dialogue_layout_job',None):self.root.after_cancel(self.dialogue_layout_job)
+        if getattr(self,'dialogue_layout_job',None):return
         def layout():
             self.dialogue_layout_job=None
             if not self.closed:self.layout_dialogue()
-        self.dialogue_layout_job=self.root.after(40,layout)
+        self.dialogue_layout_job=self.root.after_idle(layout)
 
     def sync_reply_indicator(self):
         if self.active and not self.closed:
@@ -154,7 +154,8 @@ class AgentPanel(HistoryMixin,ModelControls):
         self.reply_job=self.root.after(650 if self.app.ui_settings['reduce_motion'] else 360,self.animate_reply)
 
     def set_control_state(self,widget,state):
-        if str(widget.cget('state'))!=state:widget.configure(state=state)
+        # Model/settings popovers may be destroyed while the resident poll continues.
+        if widget.winfo_exists() and str(widget.cget('state'))!=state:widget.configure(state=state)
 
     def _controls(self):
         self.sync_reply_indicator()

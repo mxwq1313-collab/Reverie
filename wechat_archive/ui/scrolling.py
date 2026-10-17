@@ -87,6 +87,8 @@ class WheelRouter:
                     height = float(region[3]) - float(region[1]) if len(region) == 4 else 0
                     if height > 0:
                         target.yview_moveto(first - delta / 120 * self.pixels / height)
+                        on_scroll=getattr(target,'_on_user_scroll',None)
+                        if on_scroll:on_scroll()
                 else:
                     key = str(target)
                     previous = self.remainders.get(key, 0)

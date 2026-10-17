@@ -31,7 +31,11 @@ class ReadOnlyArchive:
     def connection(self):
         connection=sqlite3.connect(self.path.as_uri()+'?mode=ro',uri=True)
         connection.row_factory=sqlite3.Row
-        try:yield connection
+        try:
+            from ..identity import install_identity_views
+            self.identity_aliases=install_identity_views(connection);connection.commit()
+            connection.execute('PRAGMA query_only=ON')
+            yield connection
         finally:connection.close()
 
 
@@ -89,7 +93,13 @@ class ApplicationController:
     def view_state(self):
         views=self.settings().get('views',{})
         value=views.get(str(self.database),{}) if isinstance(views,dict) else {}
-        return value if isinstance(value,dict) else {}
+        if not isinstance(value,dict):return {}
+        value=dict(value)
+        if self.database:
+            aliases=getattr(self.readonly(),'identity_aliases',{})
+            if 'owner_id' in value:value['owner_id']=aliases.get(value['owner_id'],value['owner_id'])
+            if type(value.get('peer_id')) is int and value['peer_id']>0:value['peer_id']=aliases.get(value['peer_id'],value['peer_id'])
+        return value
 
     def save_view(self,owner,peer):
         _id(owner,'owner_id')
@@ -113,13 +123,21 @@ class ApplicationController:
         value=self.settings().get('copilot_layout',{})
         if not isinstance(value,dict):value={}
         width=value.get('width',360);expanded=value.get('expanded',True)
-        return {'width':width if type(width) is int and 300<=width<=640 else 360,
+        return {'width':width if type(width) is int and 300<=width<=4096 else 360,
                 'expanded':expanded if type(expanded) is bool else True}
 
     def save_copilot_layout(self,expanded,width):
-        if type(expanded) is not bool or type(width) is not int or not 300<=width<=640:
-            raise ValidationError('助手布局宽度为300–640逻辑像素。')
+        if type(expanded) is not bool or type(width) is not int or not 300<=width<=4096:
+            raise ValidationError('助手布局宽度为300–4096逻辑像素。')
         settings=self.settings();settings['copilot_layout']={'expanded':expanded,'width':width};self.save_settings(settings)
+
+    def browser_layout(self):
+        value=self.settings().get('browser_layout',{});value=value if isinstance(value,dict) else {}
+        width=value.get('width',270)
+        return {'width':width if type(width) is int and 140<=width<=2048 else 270}
+    def save_browser_layout(self,width):
+        if type(width) is not int or not 140<=width<=2048:raise ValidationError('会话列表宽度为140–2048逻辑像素。')
+        settings=self.settings();settings['browser_layout']={'width':width};self.save_settings(settings)
 
     def restore_archive(self):
         saved=self.settings().get('last_archive');candidates=[]

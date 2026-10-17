@@ -100,19 +100,19 @@ class Release220NavigationTests(unittest.TestCase):
     def test_removed_tools_overview_and_navigation_jump_buttons(self):
         self.show();app=self.app;app.show_page('随机回忆');self.root.update()
         self.assertNotIn('归档小工具',app.tab_routes);self.assertNotIn('归档小工具',app.pages);self.assertFalse(hasattr(app.toolbox_panel,'home'))
-        for name in ('随机回忆','文字小工坊','时光胶囊'):
+        for name in ('随机回忆','时光胶囊'):
             labels=[str(w.cget('text')) for w in app.descendants(app.toolbox_panel.views[name]) if w.winfo_class()=='TButton']
             self.assertFalse(any(x.startswith('← ') for x in labels))
     def test_page_switch_and_generic_selection_do_not_create_a_toast(self):
         self.show();app=self.app;app.feedback.show('旧提示')
-        app.feedback.receipt('聊天归档',app.status.get());self.root.update();self.assertFalse(app.feedback.frame.winfo_ismapped())
-        app.feedback.receipt('任意选择',app.status.get());self.root.update();self.assertFalse(app.feedback.frame.winfo_ismapped())
-        app.status.set('内容已复制。');app.feedback.receipt('复制','旧状态');self.root.update();self.assertTrue(app.feedback.frame.winfo_ismapped())
-    def test_forward_fit_has_no_nested_idle_drain_and_text_width_stays_fixed_during_resize(self):
+        app.feedback.receipt('聊天归档',app.status.get());self.root.update();self.assertFalse(hasattr(app.feedback,'frame'))
+        app.feedback.receipt('任意选择',app.status.get());self.root.update();self.assertFalse(hasattr(app.feedback,'frame'))
+        app.status.set('内容已复制。');app.feedback.receipt('复制','旧状态');self.root.update();self.assertFalse(hasattr(app.feedback,'frame'))
+    def test_forward_fit_has_no_nested_idle_drain_and_tracks_live_resize(self):
         _,control=self.forward(3,True);control.toggle();self.settle(lambda:len(control.rendered)==3 and not control.resize_job)
         widget=control.rendered[0][2];before=widget.winfo_width()
         with patch.object(control,'update_idletasks',side_effect=AssertionError('nested event drain')):
-            self.root.geometry('1400x760');self.root.update_idletasks();self.assertEqual(widget.winfo_width(),before)
+            self.root.geometry('1400x760');self.root.update();self.assertTrue(widget.winfo_viewable())
             self.root.after(240,self.root.quit);self.root.mainloop()
         self.assertEqual(self.errors,[])
 

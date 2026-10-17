@@ -125,6 +125,8 @@ class LightControlTests(unittest.TestCase):
         own=panel.power_popover.outside_binding
         self.assertIn(own,self.root.bind_all('<Button-1>'))
         panel.parameters_popup.destroy();self.root.update()
+        # Let the resident assistant poll run against the retired popup handles.
+        self.root.after(450,self.root.quit);self.root.mainloop()
         self.assertNotIn(own,self.root.bind_all('<Button-1>'))
         self.assertIn(other,self.root.bind_all('<Button-1>'))
         self.assertFalse(self.root.tk.call('info','commands',own))

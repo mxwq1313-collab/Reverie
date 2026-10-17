@@ -53,7 +53,7 @@ class UserSettingsTests(unittest.TestCase):
 
     def test_tool_tabs_have_no_placeholder_or_unavailable_backup_diagnostics(self):
         labels=[self.app.tools_notebook.tab(tab,'text') for tab in self.app.tools_notebook.tabs()]
-        self.assertEqual(labels,['归档管理','语义检索','文字小工坊'])
+        self.assertEqual(labels,['归档管理','语义检索','随机回忆'])
         self.assertIn('导入与分析报告',[self.app.settings_notebook.tab(tab,'text') for tab in self.app.settings_notebook.tabs()])
         self.assertFalse(self.app.knowledge_panel.ask_button.winfo_manager())
 

@@ -113,7 +113,7 @@ class CopilotUITests(unittest.TestCase):
 
     def test_drawer_grip_adjustment_saves_logical_width(self):
         self.show(900,650);self.assertEqual(self.app.copilot_mode,'drawer')
-        self.app.start_copilot_drag(SimpleNamespace(x_root=600));self.app.drag_copilot(SimpleNamespace(x_root=565));self.app.persist_copilot_layout()
+        self.app.start_copilot_drag(SimpleNamespace(x_root=600));self.app.drag_copilot(SimpleNamespace(x_root=565));self.app.finish_copilot_drag()
         self.assertAlmostEqual(self.controller.copilot_layout()['width'],395,delta=3)
 
     def test_source_change_while_answering_revokes_context_and_keeps_connection(self):

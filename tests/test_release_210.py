@@ -69,11 +69,11 @@ class Release210UI(unittest.TestCase):
         self.root.update();self.assertFalse(self.app.busy);self.assertEqual(self.errors,[])
     def test_each_tool_has_an_independent_page_and_back(self):
         self.show();box=self.app.toolbox_panel
-        for name in ('时光胶囊','文字小工坊'):
+        for name in ('时光胶囊','随机回忆'):
             box.open_tool(name);self.root.update();self.assertFalse(hasattr(box,'home'))
             self.assertEqual([key for key,view in box.views.items() if view.winfo_ismapped()],[name])
-        self.app.show_page('随机回忆');self.root.update();self.assertTrue(self.app.memory_popup.window.winfo_viewable())
-        self.assertNotIn('随机回忆',self.app.tab_routes)
+        self.app.show_page('随机回忆');self.root.update();self.assertTrue(box.random.memory.winfo_viewable())
+        self.assertIn('随机回忆',self.app.tab_routes)
         self.app.show_page('数据管理');self.root.update();self.assertFalse(any(view.winfo_ismapped() for view in box.views.values()))
     def test_capsule_pagination_filters_and_readonly_save(self):
         fixture.WorkbenchTests.add_bulk(self);box=self.app.toolbox_panel;tool=box.capsule;before=self.path.read_bytes()
@@ -95,16 +95,6 @@ class Release210UI(unittest.TestCase):
         box.read('random');self.settle();self.assertEqual(tool.row['id'],first);self.assertIn('全部打捞',self.app.status.get())
         tool.clear_history();self.assertIsNone(tool.row);box.read('random');self.settle();self.assertEqual(tool.row['id'],first)
 
-    def test_text_workshop_replace_undo_and_utf8_files(self):
-        box=self.app.toolbox_panel;workshop=box.workshop;before=self.path.read_bytes();workshop.set_text('你好 hello  \n\n\nHELLO \\text')
-        workshop.find.set('hello');workshop.replacement.set('world\\value');workshop.ignore_case.set(True);workshop.replace(True)
-        self.assertIn('2 处',self.app.status.get());self.assertEqual(workshop.text.get('1.0','end-1c').count('world\\value'),2)
-        workshop.undo(False);self.assertIn('HELLO',workshop.text.get('1.0','end-1c'));workshop.transform('blank');self.assertNotIn('\n\n\n',workshop.text.get('1.0','end-1c'))
-        saved=self.folder/'notes.txt'
-        with patch('wechat_archive.ui.toolbox_panel.filedialog.asksaveasfilename',return_value=str(saved)):workshop.save()
-        workshop.transform('clear')
-        with patch('wechat_archive.ui.toolbox_panel.filedialog.askopenfilename',return_value=str(saved)):workshop.load()
-        self.assertEqual(saved.read_text(encoding='utf-8'),workshop.text.get('1.0','end-1c'));self.assertEqual(self.path.read_bytes(),before)
     def test_cards_remove_recent_message_and_show_local_avatar(self):
         image=self.folder/'picture.png';Image.new('RGB',(80,80),'#57a38b').save(image);self.service.update_user(2,avatar=str(image));self.app.load_contacts()
         card,name,preview,stamp,count=self.app.contact_tree.cards['2'];self.assertEqual(preview.cget('text'),'');self.assertFalse(preview.winfo_manager())
@@ -113,7 +103,7 @@ class Release210UI(unittest.TestCase):
     def test_logo_and_release_version_are_packaged_assets(self):
         from wechat_archive import __version__
         from wechat_archive.ui.app_logo import original,windows_icon
-        self.assertEqual(__version__,'2.2.2');self.assertTrue(original().startswith(b'\x89PNG'))
+        self.assertEqual(__version__,'2.2.3');self.assertTrue(original().startswith(b'\x89PNG'))
         icon=self.folder/'app.ico';windows_icon(icon)
         with Image.open(icon) as image:self.assertIn((256,256),image.info['sizes'])
         self.assertEqual(self.app.window_logo.width(),64);self.assertTrue(self.app.brand_label.cget('image'))
