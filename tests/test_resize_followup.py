@@ -57,7 +57,9 @@ class ResizeFollowupTests(unittest.TestCase):
         self.assertEqual(self.errors,[])
 
     def test_copilot_width_can_exceed_previous_640_limit(self):
+        self.root.maxsize(5000,3000)  # This wide-pane contract must exceed a hosted desktop.
         self.show(1800,900);self.settle();app=self.app;panes=app.workspace_panes
+        self.assertEqual(app.copilot_mode,'docked',(self.root.winfo_width(),panes.winfo_width(),app.theme.scale))
         panes.sash_place(0,panes.winfo_width()-app.theme.u(800)-int(panes.cget('sashwidth')),0);app.save_copilot_sash();self.root.update()
         self.assertAlmostEqual(app.controller.copilot_layout()['width'],800,delta=2)
         app.layout_key=None;app.adapt_layout();self.root.update();self.assertAlmostEqual(app.copilot_host.winfo_width(),800,delta=3)
