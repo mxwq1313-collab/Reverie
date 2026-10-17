@@ -40,8 +40,12 @@ class InternalResizeTests(unittest.TestCase):
         self.assertEqual(self.errors,[])
 
     def test_copilot_native_split_does_not_snap_back_before_commit(self):
+        # Hosted Windows can cap top-level geometry to a 1024px desktop.
+        # This case requires the real docked sash; drawer cases stay narrow.
+        self.root.maxsize(5000,3000)
         self.show(1800,850)
         app=self.app;panes=app.workspace_panes
+        self.assertEqual(app.copilot_mode,'docked',(self.root.winfo_width(),panes.winfo_width(),app.theme.scale))
         before=app.copilot_host.winfo_width();sx=panes.sash_coord(0)[0]
         with patch.object(app.controller,'save_copilot_layout',wraps=app.controller.save_copilot_layout) as save:
             x=self.drag_native(panes,sx-80)
