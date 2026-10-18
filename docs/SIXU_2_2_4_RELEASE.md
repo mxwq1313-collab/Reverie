@@ -20,10 +20,12 @@
 
 详细条件、失败记录和测量依据见[卡顿修复验收](https://github.com/mxwq1313-collab/Reverie/blob/main/docs/UI_LAG_FIX_ACCEPTANCE_20261018.md)；该文档保留版本调整前的历史验收状态。
 
-2.2.4 本机发行专项 141/141（1024×768 默认最大尺寸）、管理 33/33、新 EXE 五项 5/5，0 失败、0 跳过；Windows 文件/产品版本均为 2.2.4。EXE SHA256：e406bea5fe7f2480e9dc1bed75ffdf6bfd6ffd843fff965835a3619dea5dac75。GitHub 构建与正式资产下载尚待执行。
+2.2.4 本机发行专项 141/141（1024×768 默认最大尺寸）、管理 33/33、新 EXE 五项 5/5，0 失败、0 跳过；Windows 文件/产品版本均为 2.2.4。EXE SHA256：e406bea5fe7f2480e9dc1bed75ffdf6bfd6ffd843fff965835a3619dea5dac75。GitHub 构建、174 项测试、五项 EXE 和生成 ZIP 的 CRC 检查通过；正式清单与 API 摘要相符。本机完整 ZIP 复下载因持续低速未完成。
 
 ## 下载与使用
 
 下载 Sixu-2.2.4-Windows-x64.zip，完整解压后运行 Sixu/思绪.exe，保留 _internal 文件夹。发行包包含固定并校验过的 Codex 运行时、使用说明与发行清单；不包含个人聊天、数据库、密钥或登录状态。未取得的媒体仍显示实际缺失状态。
 
 应用版本、项目包版本和 Windows 文件/产品版本统一为 2.2.4。正式资产包括 ZIP 和 SHA256SUMS.txt；发布完成后将核对实际下载包的摘要、ZIP CRC、版本、发行提交和固定运行时，并保存[发行回执](https://github.com/mxwq1313-collab/Reverie/blob/main/docs/SIXU_2_2_4_RECEIPT.md)。
+
+正式发行已确认：Windows 工作流 39115644152 success，Release 为仓库 latest。完整证据和本机下载核验边界见[发行回执](SIXU_2_2_4_RECEIPT.md)。
