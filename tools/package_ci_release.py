@@ -2,7 +2,7 @@
 import hashlib,json,os,zipfile,sys
 from pathlib import Path
 
-root=Path(__file__).resolve().parents[1];sys.path.insert(0,str(root));folder=root/'build/release/Sixu';version='2.2.3'
+root=Path(__file__).resolve().parents[1];sys.path.insert(0,str(root));folder=root/'build/release/Sixu';version='2.2.4'
 from wechat_archive import __version__
 if __version__!=version:raise ValueError('Release workflow version differs from application')
 for name,report in (('desktop','desktop_check.json'),('codex','codex_check.json'),('knowledge','knowledge_check.json'),('sixu','sixu_check.json'),('workbench','workbench_check.json')):
@@ -24,10 +24,10 @@ def sha(path):
     with path.open('rb') as stream:
         for block in iter(lambda:stream.read(1024*1024),b''):value.update(block)
     return value.hexdigest()
-(folder/'使用说明.txt').write_text('思绪 2.2.3\n\n完整解压后运行思绪.exe，保留_internal目录。\n本包不含个人聊天或登录状态。\n详细变更及资源缺失边界见2.2.3发布与验收.md。\n',encoding='utf-8')
-(folder/'2.2.3发布与验收.md').write_text((root/'docs/SIXU_2_2_3_RELEASE.md').read_text(encoding='utf-8'),encoding='utf-8')
+(folder/'使用说明.txt').write_text('思绪 2.2.4\n\n完整解压后运行思绪.exe，保留_internal目录。\n本包不含个人聊天或登录状态。\n详细变更及资源缺失边界见2.2.4发布与验收.md。\n',encoding='utf-8')
+(folder/'2.2.4发布与验收.md').write_text((root/'docs/SIXU_2_2_4_RELEASE.md').read_text(encoding='utf-8'),encoding='utf-8')
 (folder/'release_manifest.json').write_text(json.dumps({'version':version,'github_commit':os.environ.get('GITHUB_SHA'),'verification':'five packaged checks passed; release UI, texture, internal resize and management suites passed','exe_sha256':sha(folder/'思绪.exe'),'personal_data_included':False},indent=2),encoding='utf-8')
-target=root/'build/Sixu-2.2.3-Windows-x64.zip'
+target=root/'build/Sixu-2.2.4-Windows-x64.zip'
 with zipfile.ZipFile(target,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
     for file in sorted(p for p in folder.rglob('*') if p.is_file()):archive.write(file,Path('Sixu')/file.relative_to(folder))
 with zipfile.ZipFile(target) as archive:

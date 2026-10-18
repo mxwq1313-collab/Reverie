@@ -63,10 +63,10 @@ class AvatarTests(unittest.TestCase):
 class Release210UI(unittest.TestCase):
     setUp=fixture.WorkbenchTests.setUp
     show=fixture.WorkbenchTests.show
-    def settle(self):
+    def settle(self,condition=lambda:True):
         deadline=time.monotonic()+7
-        while self.app.busy and time.monotonic()<deadline:self.root.update();time.sleep(.005)
-        self.root.update();self.assertFalse(self.app.busy);self.assertEqual(self.errors,[])
+        while (self.app.busy or not condition()) and time.monotonic()<deadline:self.root.update();time.sleep(.005)
+        self.root.update();self.assertFalse(self.app.busy);self.assertTrue(condition());self.assertEqual(self.errors,[])
     def test_each_tool_has_an_independent_page_and_back(self):
         self.show();box=self.app.toolbox_panel
         for name in ('时光胶囊','随机回忆'):
@@ -98,12 +98,12 @@ class Release210UI(unittest.TestCase):
     def test_cards_remove_recent_message_and_show_local_avatar(self):
         image=self.folder/'picture.png';Image.new('RGB',(80,80),'#57a38b').save(image);self.service.update_user(2,avatar=str(image));self.app.load_contacts()
         card,name,preview,stamp,count=self.app.contact_tree.cards['2'];self.assertEqual(preview.cget('text'),'');self.assertFalse(preview.winfo_manager())
-        canvas=next(w for w in card.content.winfo_children() if isinstance(w,tk.Canvas));self.assertTrue(canvas.avatar_available);self.assertTrue(hasattr(canvas,'avatar_image'))
+        canvas=next(w for w in card.content.winfo_children() if isinstance(w,tk.Canvas));self.settle(lambda:canvas.avatar_available);self.assertTrue(canvas.avatar_available);self.assertTrue(hasattr(canvas,'avatar_image'))
         self.assertNotIn('本人 8 条',count.cget('text'))
     def test_logo_and_release_version_are_packaged_assets(self):
         from wechat_archive import __version__
         from wechat_archive.ui.app_logo import original,windows_icon
-        self.assertEqual(__version__,'2.2.3');self.assertTrue(original().startswith(b'\x89PNG'))
+        self.assertEqual(__version__,'2.2.4');self.assertTrue(original().startswith(b'\x89PNG'))
         icon=self.folder/'app.ico';windows_icon(icon)
         with Image.open(icon) as image:self.assertIn((256,256),image.info['sizes'])
         self.assertEqual(self.app.window_logo.width(),64);self.assertTrue(self.app.brand_label.cget('image'))

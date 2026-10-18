@@ -187,6 +187,7 @@ class OperationPanels:
         if name and getattr(self,'current_page',None)=='工具与设置':
             self.current_subpage=name
             self.toolbox_panel.activate(name)
+            if name=='数据管理':self.refresh_management_messages()
 
     def build_management(self):
         from .workspace_widgets import card,ActionRow

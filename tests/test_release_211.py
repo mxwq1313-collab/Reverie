@@ -83,9 +83,25 @@ class Release211UITests(unittest.TestCase):
         app.chat_text.set_rows(rows,app.owner_id);self.root.update();controls=[value['forward'] for value in app.chat_text.bubbles.values()]
         for control in controls:control.toggle()
         self.settle(lambda:all(len(c.rendered)==10 and not c.resize_job and not c.render_job for c in controls))
-        shown=sum(text.winfo_ismapped() for c in controls for _,_,text in c.rendered if text is not None);self.assertGreater(shown,0);self.assertLess(shown,12)
+        shown=sum(text.winfo_ismapped() for c in controls for _,_,text in c.rendered if text is not None)
+        visible_state={'top':app.chat_text.canvas.canvasy(0),'region':app.chat_text.canvas.cget('scrollregion'),
+                       'body':(app.chat_text.body.winfo_y(),app.chat_text.body.winfo_height(),app.chat_text.body.winfo_width()),
+                       'window':getattr(app.chat_text,'_stack_window_geometry',None),
+                       'controls':[(c.timeline_y(),c.master.winfo_y(),c.master.winfo_height(),c.master.winfo_reqheight(),c.winfo_y(),c.winfo_height(),c.winfo_width(),c.body.winfo_y(),c.body.winfo_width(),c.winfo_viewable(),c.needs_fit,c.resize_job,[(f.winfo_y(),f.winfo_height(),f.winfo_width(),f._forward_virtual,t is not None) for f,_,t in c.rendered]) for c in controls]}
+        self.assertGreater(shown,0,repr(visible_state));self.assertLess(shown,12)
         app.chat_text.canvas.yview_moveto(1);self.root.update();app.chat_text.refresh_visible()
-        self.settle(lambda:controls[-1].rendered[-1][2] is not None and controls[-1].rendered[-1][2].winfo_ismapped() and not controls[-1].resize_job)
+        try:
+            self.settle(lambda:controls[-1].rendered[-1][2] is not None and controls[-1].rendered[-1][2].winfo_ismapped() and not controls[-1].resize_job)
+        except AssertionError:
+            view=app.chat_text;control=controls[-1]
+            state={'window':(self.root.winfo_width(),self.root.winfo_height()),'scale':app.theme.scale,
+                   'canvas_top':view.canvas.canvasy(0),'region':view.canvas.cget('scrollregion'),
+                   'stack_total':getattr(view,'_stack_total',None),'stack_window':getattr(view,'_stack_window_geometry',None),
+                   'logical_y':control.timeline_y(),'outer':(control.master.winfo_y(),control.master.winfo_rooty(),control.master.winfo_height(),control.master.winfo_reqheight()),
+                   'control':(control.winfo_y(),control.winfo_rooty(),control.winfo_height(),control.winfo_reqheight(),control.winfo_viewable()),
+                   'body':(control.body.winfo_y(),control.body.winfo_height(),control.body.winfo_reqheight()),
+                   'frames':[(frame.winfo_y(),frame.winfo_rooty(),frame.winfo_height(),frame.winfo_reqheight(),frame._forward_virtual,text is not None,text.winfo_ismapped() if text is not None else False) for frame,_,text in control.rendered]}
+            self.fail('Forward layout: '+repr(state))
         last=controls[-1].rendered[-1][2];self.assertIn('消息9',last.get('1.0','end-1c'));self.assertEqual(last.yview(),(0.0,1.0))
         self.assertEqual(self.errors,[])
 
@@ -109,13 +125,13 @@ class Release211UITests(unittest.TestCase):
         self.assertEqual(found,set(range(3)));self.assertEqual(self.errors,[])
     def test_real_avatar_pixels_are_rounded_square_and_placeholder_is_consistent(self):
         image=self.folder/'avatar.png';Image.new('RGB',(64,64),'#d87e77').save(image);self.service.update_user(2,avatar=str(image));self.app.load_contacts()
-        card=self.app.contact_tree.cards['2'][0];canvas=next(w for w in card.content.winfo_children() if isinstance(w,tk.Canvas));photo=str(canvas.avatar_image);u=self.app.theme.u
+        card=self.app.contact_tree.cards['2'][0];canvas=next(w for w in card.content.winfo_children() if isinstance(w,tk.Canvas));self.settle(lambda:canvas.avatar_available);photo=str(canvas.avatar_image);u=self.app.theme.u
         self.assertFalse(self.root.tk.call(photo,'transparency','get',u(4),u(4)));self.assertTrue(self.root.tk.call(photo,'transparency','get',0,0))
         other=self.app.contact_tree.cards['3'][0];fallback=next(w for w in other.content.winfo_children() if isinstance(w,tk.Canvas));self.assertTrue(any(fallback.type(item)=='polygon' for item in fallback.find_all()))
     def test_version_and_replacement_logo_asset(self):
         from wechat_archive import __version__
         from wechat_archive.ui.app_logo import original
-        self.assertEqual(__version__,'2.2.3');metadata=json.loads((Path(__file__).resolve().parents[1]/'wechat_archive/ui/assets/app_logo.json').read_text(encoding='utf-8'))
+        self.assertEqual(__version__,'2.2.4');metadata=json.loads((Path(__file__).resolve().parents[1]/'wechat_archive/ui/assets/app_logo.json').read_text(encoding='utf-8'))
         self.assertEqual(metadata['name'],'思绪缠结的可爱猫咪');self.assertEqual(hashlib.sha256(original()).hexdigest(),metadata['sha256'])
 
 

@@ -25,6 +25,9 @@ def verify_patch(app):
     picture=Path(app.controller.database).parent/'patch_avatar.png';Image.new('RGB',(64,64),'#df9494').save(picture)
     app.show_page('聊天归档');app.contact_tree.set_rows([{'id':883,'nickname':'合成头像','wxid':'release_patch_peer','avatar':str(picture),'message_count':1}]);root.update()
     content=app.contact_tree.cards['883'][0].content;canvas=next(w for w in content.winfo_children() if isinstance(w,tk.Canvas))
+    deadline=time.monotonic()+5
+    while not canvas.avatar_available and time.monotonic()<deadline:root.update();time.sleep(.005)
+    assert canvas.avatar_available,'Synthetic avatar did not finish loading'
     assert not bool(root.tk.call(str(canvas.avatar_image),'transparency','get',app.theme.u(4),app.theme.u(4)))
     assert bool(root.tk.call(str(canvas.avatar_image),'transparency','get',0,0))
     return {'folded_default':True,'inline_normal_messages':10,'forward_inline_emoticon':True,'raw_forward_copy_unchanged':True,'fold_releases_widgets':True,'capsule_bottom_above_statistics':True,'random_memory_tool_tab':True,'wechat_rounded_square_avatar':True,'model_requests':False,'wechat_source_read':False}

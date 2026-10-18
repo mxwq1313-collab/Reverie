@@ -1,5 +1,6 @@
 """Readable Markdown in native Text; hidden markers preserve source and stream indices."""
 import re
+from bisect import bisect_right
 import webbrowser
 
 
@@ -26,13 +27,45 @@ def configure(widget, theme):
     for tag,options in styles.items():widget.tag_configure(tag,**options)
 
 
-def decorate(widget, text, theme):
-    configure(widget,theme)
-    for tag in widget.tag_names():
-        if tag.startswith('md_'):widget.tag_remove(tag,'1.0','end')
+def text_index(widget, text, base_index='1.0'):
+    """Resolve local offsets by line, avoiding repeated traversal of the transcript."""
+    base_line, base_column = map(int, widget.index(base_index).split('.'))
+    starts = [0] + [m.end() for m in re.finditer(r'\n', text)]
     def at(offset):
-        # Text's +Nc modifier counts Unicode code points, including non-BMP.
-        return '1.0+'+str(offset)+'c'
+        line = bisect_right(starts, offset) - 1
+        column = base_column if line == 0 else 0
+        return f'{base_line+line}.{column}+{offset-starts[line]}c'
+    return at
+
+
+def clear_links(widget, start, end=None):
+    lower=tuple(map(int,widget.index(start).split('.')))
+    upper=tuple(map(int,widget.index(end).split('.'))) if end is not None else None
+    links=getattr(widget,'_markdown_links',{})
+    for name,(position,_,bindings) in list(links.items()):
+        if position>=lower and (upper is None or position<upper):
+            for sequence,funcid in bindings:widget.tag_unbind(name,sequence,funcid)
+            widget.tag_delete(name);links.pop(name,None)
+
+
+def decorate(widget, text, theme):
+    clear_links(widget, '1.0')
+    return decorate_range(widget, text, theme)
+
+
+def decorate_range(widget, text, theme, start=0, end=None, base_index='1.0'):
+    """Decorate one complete message/block without touching tags outside its range."""
+    configure(widget, theme)
+    end = len(text) if end is None else end
+    at_full = text_index(widget, text, base_index)
+    base_index = widget.index(at_full(start))
+    text = text[start:end]
+    at = text_index(widget, text, base_index)
+    first, last = at(0), at(len(text))
+    clear_links(widget, first, last)
+    for name in ('md_marker','md_reference_marker','md_blank','md_bold','md_italic',
+                 'md_h1','md_h2','md_h3','md_list','md_quote','md_code','md_codeblock','md_rule'):
+        widget.tag_remove(name, first, last)
     def tag(name,start,end):widget.tag_add(name,at(start),at(end))
     code=[]
     for match in re.finditer(r'(?m)^\s*```[^\n]*\n[\s\S]*?(?:^\s*```\s*$|\Z)',text):
@@ -65,10 +98,15 @@ def decorate(widget, text, theme):
             tag('md_reference_marker',reference.end()-1,reference.end())
     for number,m in enumerate(re.finditer(r'\[([^\]\n]+)\]\((https?://[^\s)]+)\)',text)):
         if not outside(m.start()):continue
-        name='md_link_'+str(number)
+        serial = getattr(widget, '_markdown_link_serial', 0) + 1
+        widget._markdown_link_serial = serial
+        name = 'md_link_' + str(serial)
+        if not hasattr(widget, '_markdown_links'):widget._markdown_links = {}
         tag(name,m.start()+1,m.start()+1+len(m[1]));tag('md_marker',m.start(),m.start()+1);tag('md_marker',m.start()+1+len(m[1]),m.end())
         widget.tag_configure(name,foreground=theme.palette['ACCENT'],underline=True)
-        widget.tag_bind(name,'<Button-1>',lambda _,url=m[2]:webbrowser.open(url))
-        widget.tag_bind(name,'<Enter>',lambda _:widget.configure(cursor='hand2'))
-        widget.tag_bind(name,'<Leave>',lambda _:widget.configure(cursor='xterm'))
+        handlers=(('<Button-1>',lambda _,url=m[2]:webbrowser.open(url)),
+                  ('<Enter>',lambda _:widget.configure(cursor='hand2')),
+                  ('<Leave>',lambda _:widget.configure(cursor='xterm')))
+        bindings=[(sequence,widget.tag_bind(name,sequence,handler)) for sequence,handler in handlers]
+        widget._markdown_links[name]=(tuple(map(int,widget.index(at(m.start())).split('.'))),m[2],bindings)
     for name in ('md_h1','md_h2','md_h3','md_bold','md_code','md_codeblock','md_blank','md_marker','md_reference_marker','sel'):widget.tag_raise(name)

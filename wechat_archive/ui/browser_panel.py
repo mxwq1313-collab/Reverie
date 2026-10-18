@@ -1,6 +1,7 @@
 from .media_widgets import present_content
 """聊天工作台的三栏内容、视图恢复、搜索和只读上下文。"""
 import tkinter as tk
+import time
 from tkinter import ttk
 from .message_widgets import ContactList,BubbleTimeline
 from .theme import PAPER,CANVAS,INK,SECONDARY
@@ -134,8 +135,7 @@ class BrowserMixin(AsyncBrowserMixin):
         }
         title,hint,actions=states[kind];self.browser_state=kind;self.chat_text.show_state(title,hint,actions)
         self.chat_info.set('全部匹配 0 条 · 当前加载 0 条' if kind=='no_matches' else title)
-        if hasattr(self,'message_tree'):
-            for key in self.message_tree.get_children():self.message_tree.delete(key)
+        if hasattr(self,'message_tree'):self.sync_management_messages()
 
     def refresh_archive(self):
         stats=getattr(self,'statistics_panel',None)
@@ -146,7 +146,8 @@ class BrowserMixin(AsyncBrowserMixin):
             self.archive_label.set('未打开归档');self.show_browser_state('no_archive');return
         info=self.controller.overview();path=self.controller.database
         changed=path!=getattr(self,'view_archive',None);self.view_archive=path
-        if changed:self.forget_search_return()
+        if changed:
+            self.forget_search_return();self.contact_tree.avatar_service.clear();self.contact_tree._elide_cache.clear()
         self.archive_label.set(path.name);self.summary.set(f"{info['users']} 个身份 · {info['messages']} 条已归档消息")
         self.archive_users=self.controller.users();labels=[f"{row['nickname']} · {row['id']}" for row in self.archive_users];self.owner_box['values']=labels
         for key in self.user_tree.get_children():self.user_tree.delete(key)
@@ -256,14 +257,46 @@ class BrowserMixin(AsyncBrowserMixin):
             self.pending_browser_render=False;query=self.loaded_query
             self.chat_text.set_rows_incremental(self.message_rows,self.owner_id,query[2],query[1] is None,self.show_context)
 
+    def management_visible(self):
+        if getattr(self,'current_page',None)!='工具与设置':return False
+        notebook,tab=self.tab_routes['数据管理']
+        return notebook.select()==str(tab)
+
     def sync_management_messages(self):
-        for key in self.message_tree.get_children():self.message_tree.delete(key)
-        for row in self.message_rows:self.message_tree.insert('','end',iid=str(row['id']),values=(row['id'],row['create_time'],row['sender_name'],row['receiver_name'],present_content(row)[:80].replace('\n',' ')))
+        self._management_messages_dirty=True
+        self._management_revision=getattr(self,'_management_revision',0)+1
+        if getattr(self,'management_job',None):
+            self.root.after_cancel(self.management_job);self.management_job=None
+        if self.management_visible():self.refresh_management_messages()
+
+    def refresh_management_messages(self):
+        if not getattr(self,'_management_messages_dirty',False) or not self.management_visible():return
+        if getattr(self,'management_job',None):return
+        revision=self._management_revision
+        rows=iter(tuple(self.message_rows))
+        self.message_tree.delete(*self.message_tree.get_children())
+        def batch():
+            self.management_job=None
+            if self.closed or revision!=self._management_revision:return
+            if not self.management_visible():return
+            started=time.perf_counter()
+            for row in rows:
+                self.message_tree.insert('','end',iid=str(row['id']),values=(row['id'],row['create_time'],row['sender_name'],row['receiver_name'],present_content(row)[:80].replace('\n',' ')))
+                if self.background_browsing and time.perf_counter()-started>.006:
+                    self.management_job=self.root.after(1,batch);return
+            self._management_messages_dirty=False
+        if self.background_browsing:self.management_job=self.root.after(1,batch)
+        else:batch()
 
     def show_context(self,message_id,_prepared=None):
         if self.background_browsing and _prepared is None:
             owner=self.owner_id;token=self.controller.archive_view_token();reader=self.controller.read_snapshot(None)
-            def work(cancel):reader._read_cancel=cancel;return reader.message_context(owner,message_id)
+            cached=list(self.contact_rows) if not self.contact_keyword.get() else None
+            def work(cancel):
+                reader._read_cancel=cancel
+                result=reader.message_context(owner,message_id)
+                result['_contacts']=cached if cached is not None else reader.contacts(owner)
+                return result
             def done(result):
                 if self.owner_id==owner and self.controller.archive_view_token()==token:self.show_context(message_id,_prepared=result)
             self.status.set('正在定位原始消息…');self.browser_reads.submit('context',work,done,self.read_problem);return
@@ -273,19 +306,22 @@ class BrowserMixin(AsyncBrowserMixin):
         if self.search_return_state is None and query and (query[1] is None or any(query[2:])):
             self.search_return_state={'query':query,'token':self.loaded_token,'peer_id':self.peer_id,
                 'rows':list(self.message_rows),'total':self.message_total,'offset':self.loaded_offset,
-                'contact_keyword':self.contact_keyword.get(),'title':self.chat_title.get(),'subtitle':self.chat_subtitle.get(),
+                'contact_keyword':self.contact_keyword.get(),'contact_rows':list(self.contact_rows),'title':self.chat_title.get(),'subtitle':self.chat_subtitle.get(),
                 'dates_expanded':self.dates_expanded,'top':self.chat_text.canvas.canvasy(0)}
             self.return_results_button.grid()
         self.peer_id=result['peer_id'];self.search_word.set('');self.start_date.set('');self.end_date.set('');self.search_scope.set('当前会话')
         self.notify_copilot_binding()
-        self.contact_keyword.set('');self.contact_rows=[row for row in self.controller.contacts(self.owner_id) if row['message_count']>0]
-        self.contact_tree.set_rows(self.contact_rows,self.peer_id);self.contact_count.set(f'{len(self.contact_rows)} 个')
+        self.contact_keyword.set('')
+        contacts=result['_contacts'] if '_contacts' in result else self.controller.contacts(self.owner_id)
+        self.contact_rows=[row for row in contacts if row['message_count']>0]
+        render=self.contact_tree.set_rows_incremental if self.background_browsing else self.contact_tree.set_rows
+        render(self.contact_rows,self.peer_id);self.contact_count.set(f'{len(self.contact_rows)} 个')
         self.message_rows=list(result['items']);self.loaded_offset=result['offset'];self.message_total=result['total'];self.browser_state='messages'
         self.loaded_query=(self.owner_id,self.peer_id,'','','')
         if self.background_browsing:
             self.chat_text.set_rows_incremental(result['items'],self.owner_id);self.chat_text.after_render(lambda:self.chat_text.see_message(message_id))
         else:self.chat_text.set_rows(result['items'],self.owner_id);self.chat_text.see_message(message_id)
-        peer=next(row for row in self.contact_rows if row['id']==self.peer_id);self.chat_title.set(peer['nickname']);self.chat_subtitle.set(f'消息 #{message_id} 的原会话上下文')
+        peer=next((row for row in self.contact_rows if row['id']==self.peer_id),{'nickname':'聊天归档'});self.chat_title.set(peer['nickname']);self.chat_subtitle.set(f'消息 #{message_id} 的原会话上下文')
         self.update_message_count(result['has_more']);self.conversation_export_button.configure(state='normal');self.sync_management_messages();self.remember_view()
         self.show_page('聊天归档');self.status.set('已定位原消息；显示的是未经过滤的原会话上下文。')
 
@@ -328,8 +364,9 @@ class BrowserMixin(AsyncBrowserMixin):
         self.peer_id=saved['peer_id'];self.search_scope.set('全部会话' if peer is None else '当前会话')
         self.notify_copilot_binding()
         self.search_word.set(word);self.start_date.set(start);self.end_date.set(end);self.contact_keyword.set(saved['contact_keyword'])
-        self.contact_rows=[row for row in self.controller.contacts(owner,saved['contact_keyword']) if row['message_count']>0]
-        self.contact_tree.set_rows(self.contact_rows,self.peer_id);self.contact_count.set(f'{len(self.contact_rows)} 个')
+        self.contact_rows=saved['contact_rows']
+        render=self.contact_tree.set_rows_incremental if self.background_browsing else self.contact_tree.set_rows
+        render(self.contact_rows,self.peer_id);self.contact_count.set(f'{len(self.contact_rows)} 个')
         self.message_rows=saved['rows'];self.message_total=saved['total'];self.loaded_offset=saved['offset']
         self.loaded_query=saved['query'];self.loaded_token=saved['token'];self.browser_state='messages'
         self.chat_title.set(saved['title']);self.chat_subtitle.set(saved['subtitle'])

@@ -405,55 +405,80 @@ class AgentPanel(HistoryMixin,ModelControls):
         if item_id: self.by_id[item_id] = value
         self._render()
 
+    def schedule_stream_render(self):
+        self._stream_dirty = True
+        if not getattr(self, 'stream_render_job', None):
+            self.stream_render_job = self.root.after(130, self._render)
+
     def _render(self):
-        self._stream_dirty=False
+        if getattr(self, 'stream_render_job', None):
+            self.root.after_cancel(self.stream_render_job)
+        self.stream_render_job = None
+        self._stream_dirty = False
         self.layout_dialogue()
         self.queue_history()
-        text = '\n\n'.join(item['text'] for item in self.messages)
-        if len(text)>2000000:
-            text = '较早的显示内容已折叠，请开启新对话以减少上下文。\n\n'+text[-2000000:]
-        previous=self.transcript.get('1.0','end-1c')
-        follow=not previous or self.transcript.yview()[1]>=.995
-        self.transcript.mark_set('ux_reader','@0,0');self.transcript.mark_gravity('ux_reader','left')
-        prefix=0;suffix=0
-        if text.startswith(previous):prefix=len(previous)
+        from .rich_markdown import decorate_range, text_index, clear_links
+        widget = self.transcript
+        snapshot = [(item['role'], item['text']) for item in self.messages]
+        previous = getattr(self, '_display_snapshot', [])
+        identity = (str(widget), self.app.theme.generation)
+        if identity != getattr(self, '_display_identity', None):
+            previous = []
+            self._display_ends = []
+        first = 0
+        while first < min(len(previous), len(snapshot)) and previous[first] == snapshot[first]:
+            first += 1
+        if first == len(previous) == len(snapshot):return
+        follow = widget.compare('end-1c','==','1.0') or widget.yview()[1] >= .995
+        widget.mark_set('ux_reader', '@0,0');widget.mark_gravity('ux_reader', 'left')
+        # Only the changed message and following messages are read or decorated.
+        start = self._display_ends[first-1] if first else '1.0'
+        tail = ('\n\n' if first and first < len(snapshot) else '') + '\n\n'.join(body for _, body in snapshot[first:])
+        old_tail = widget.get(start, 'end-1c')
+        prefix = 0;suffix = 0
+        if tail.startswith(old_tail):prefix = len(old_tail)
         else:
-            while prefix<min(len(previous),len(text)) and previous[prefix]==text[prefix]:prefix+=1
-            while suffix<min(len(previous),len(text))-prefix and previous[-suffix-1]==text[-suffix-1]:suffix+=1
-        length=len
-        start=f'1.0+{length(previous[:prefix])}c'
-        end=f'1.0+{length(previous[:len(previous)-suffix])}c'
-        self.transcript.configure(state='normal')
-        if previous!=text:
-            self.transcript.delete(start,end)
-            self.transcript.insert(start,text[prefix:len(text)-suffix] if suffix else text[prefix:])
-        self.transcript.tag_remove('role','1.0','end')
-        for tag in ('turn_user','turn_codex','turn_system'):self.transcript.tag_remove(tag,'1.0','end')
-        cursor=0
-        if len(text)<2000000:
-            for item in self.messages:
-                part=item['text']
-                start=f'1.0+{length(text[:cursor])}c';end=f'{start}+{length(part)}c'
-                tag='turn_user' if item['role'] in ('你','You') else 'turn_codex' if item['role'].startswith('Codex') else 'turn_system'
-                self.transcript.tag_add(tag,start,end);cursor+=len(part)+2
-        for tag in self.transcript.tag_names():
-            if tag.startswith('reference_'):self.transcript.tag_delete(tag)
-        for index,line in enumerate(text.splitlines(),1):
-            for match in re.finditer(r'\[消息 #(\d+)\]',line):
-                tag='reference_'+str(index)+'_'+str(match.start())
-                self.transcript.tag_add(tag,f'{index}.0+{length(line[:match.start()])}c',f'{index}.0+{length(line[:match.end()])}c')
-                self.transcript.tag_configure(tag,foreground=self.app.theme.palette['ACCENT'],underline=True,font=self.app.theme.small)
-                self.transcript.tag_bind(tag,'<Enter>',lambda _:self.transcript.configure(cursor='hand2'))
-                self.transcript.tag_bind(tag,'<Leave>',lambda _:self.transcript.configure(cursor='xterm'))
-                self.transcript.tag_bind(tag,'<Button-1>',lambda event,number=int(match[1]):self.open_reference(number))
-        from .rich_markdown import decorate
-        decorate(self.transcript,text,self.app.theme)
-        self.transcript.configure(state='disabled')
+            while prefix < min(len(old_tail), len(tail)) and old_tail[prefix] == tail[prefix]:prefix += 1
+            while suffix < min(len(old_tail),len(tail))-prefix and old_tail[-suffix-1]==tail[-suffix-1]:suffix+=1
+        at_old = text_index(widget, old_tail, start)
+        widget.configure(state='normal')
+        clear_links(widget,start)
+        if old_tail != tail:
+            widget.delete(at_old(prefix),at_old(len(old_tail)-suffix))
+            widget.insert(at_old(prefix),tail[prefix:len(tail)-suffix] if suffix else tail[prefix:])
+        at_tail = text_index(widget, tail, start)
+        for name in ('role','turn_user','turn_codex','turn_system'):widget.tag_remove(name, start, 'end')
+        refs = getattr(self, '_display_references', {})
+        for name,(index,bindings) in list(refs.items()):
+            if index >= first:
+                for sequence,funcid in bindings:widget.tag_unbind(name,sequence,funcid)
+                widget.tag_delete(name);refs.pop(name)
+        ends = getattr(self, '_display_ends', [])[:first]
+        cursor = 2 if first and first < len(snapshot) else 0
+        for index in range(first, len(snapshot)):
+            role, body = snapshot[index]
+            begin, end = at_tail(cursor), at_tail(cursor+len(body))
+            tag = 'turn_user' if role in ('你','You') else 'turn_codex' if role.startswith('Codex') else 'turn_system'
+            widget.tag_add(tag, begin, end)
+            at_body = text_index(widget, body, begin)
+            for number, match in enumerate(re.finditer(r'\[消息 #(\d+)\]', body)):
+                name = f'reference_{index}_{number}'
+                widget.tag_add(name, at_body(match.start()), at_body(match.end()))
+                widget.tag_configure(name, foreground=self.app.theme.palette['ACCENT'], underline=True, font=self.app.theme.small)
+                handlers=(('<Enter>',lambda _:widget.configure(cursor='hand2')),
+                          ('<Leave>',lambda _:widget.configure(cursor='xterm')),
+                          ('<Button-1>',lambda event,number=int(match[1]):self.open_reference(number)))
+                refs[name]=(index,[(sequence,widget.tag_bind(name,sequence,handler)) for sequence,handler in handlers])
+            decorate_range(widget, body, self.app.theme, base_index=begin)
+            ends.append(widget.index(end));cursor += len(body)+2
+        self._display_snapshot = snapshot;self._display_ends = ends
+        self._display_identity = identity;self._display_references = refs
+        widget.configure(state='disabled')
         if follow:
             self.jump_latest()
             if self.follow_job:self.root.after_cancel(self.follow_job)
-            self.follow_job=self.root.after_idle(self.follow_latest)
-        else:self.transcript.yview('ux_reader')
+            self.follow_job = self.root.after_idle(self.follow_latest)
+        else:widget.yview('ux_reader')
 
     def follow_latest(self):
         self.follow_job=None
@@ -485,7 +510,7 @@ class AgentPanel(HistoryMixin,ModelControls):
         elif method == 'item/agentMessage/delta':
             item_id = params['itemId']
             if item_id not in self.by_id: self._add('Codex','',item_id)
-            self.by_id[item_id]['text'] += params.get('delta',''); self._stream_dirty=True
+            self.by_id[item_id]['text'] += params.get('delta',''); self.schedule_stream_render()
         elif method == 'item/completed' and params.get('item',{}).get('type') == 'agentMessage':
             item = params['item']; item_id = item['id']
             if item_id not in self.by_id: self._add('Codex','',item_id)
@@ -494,6 +519,7 @@ class AgentPanel(HistoryMixin,ModelControls):
             self._render()
         elif method == 'turn/completed':
             self.active = False
+            self._render()
             turn = params['turn']; status = turn.get('status')
             if status == 'completed':
                 self.pending_request=None;self.retry_request=None;self.state.set('回答完成；请结合消息引用核对结论。')
@@ -531,7 +557,6 @@ class AgentPanel(HistoryMixin,ModelControls):
                 elif kind == 'refresh_account': refresh = True
             except Exception as error:
                 self.state.set('插件显示失败：'+str(error))
-        if getattr(self,'_stream_dirty',False):self._render()
         if refresh:
             if not self.busy and self.client and self.client.connected: self.run(self.client.account,self._account)
             elif self.client and self.client.connected: self.events.put({'kind':'refresh_account','generation':self.generation})
@@ -579,6 +604,7 @@ class AgentPanel(HistoryMixin,ModelControls):
         self._controls(); self.poll_job = self.root.after(60 if self.busy or self.active else 400,self.poll)
 
     def close(self):
+        if getattr(self,'stream_render_job',None):self.root.after_cancel(self.stream_render_job);self.stream_render_job=None
         if getattr(self,'dialogue_layout_job',None):self.root.after_cancel(self.dialogue_layout_job);self.dialogue_layout_job=None
         self.flush_history()
         if self.config_job:

@@ -1,0 +1,436 @@
+{
+  "baseline_revision": "678bfd3",
+  "before": {
+    "baseline": true,
+    "python": "3.10.11",
+    "tk": "8.6.12",
+    "pillow": "12.3.0",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "font": [
+      "Microsoft YaHei UI",
+      -15
+    ],
+    "scale": 1.0,
+    "window": "1150x800",
+    "warmup_excluded_from_heartbeat": true,
+    "cases": [
+      {
+        "name": "agent_40k_stream",
+        "wall_ms": 28424.221,
+        "heartbeat_max_ms": 3886.999,
+        "heartbeat_p95_ms": 3752.457,
+        "render_p95_ms": 3886.358,
+        "render_max_ms": 3886.358,
+        "final_ms": 3584.561
+      },
+      {
+        "name": "contacts_200_avatars_False",
+        "wall_ms": 3093.682,
+        "heartbeat_max_ms": 166.429,
+        "heartbeat_p95_ms": 143.149,
+        "resize_callback_max_ms": 91.199
+      },
+      {
+        "name": "contacts_200_labels_settle",
+        "wall_ms": 237.892,
+        "heartbeat_max_ms": 237.86,
+        "heartbeat_p95_ms": 237.86,
+        "labels_complete_ms": 78.751
+      },
+      {
+        "name": "contacts_200_avatars_True",
+        "wall_ms": 3754.986,
+        "heartbeat_max_ms": 287.991,
+        "heartbeat_p95_ms": 213.296,
+        "resize_callback_max_ms": 122.248
+      },
+      {
+        "name": "contacts_200_labels_settle",
+        "wall_ms": 314.749,
+        "heartbeat_max_ms": 314.717,
+        "heartbeat_p95_ms": 314.717,
+        "labels_complete_ms": 86.373
+      },
+      {
+        "name": "contacts_500_avatars_False",
+        "wall_ms": 7559.841,
+        "heartbeat_max_ms": 288.214,
+        "heartbeat_p95_ms": 233.388,
+        "resize_callback_max_ms": 246.696
+      },
+      {
+        "name": "contacts_500_labels_settle",
+        "wall_ms": 896.938,
+        "heartbeat_max_ms": 896.889,
+        "heartbeat_p95_ms": 896.889,
+        "labels_complete_ms": 155.483
+      },
+      {
+        "name": "timeline_100",
+        "wall_ms": 1465.144,
+        "heartbeat_max_ms": 110.601,
+        "heartbeat_p95_ms": 79.067
+      },
+      {
+        "name": "timeline_300",
+        "wall_ms": 3395.863,
+        "heartbeat_max_ms": 81.652,
+        "heartbeat_p95_ms": 64.01
+      },
+      {
+        "name": "timeline_append_100",
+        "wall_ms": 1357.949,
+        "heartbeat_max_ms": 67.277,
+        "heartbeat_p95_ms": 64.692,
+        "scroll_max_ms": 1.358
+      },
+      {
+        "name": "management_1000",
+        "wall_ms": 54.392,
+        "heartbeat_max_ms": 30.752,
+        "heartbeat_p95_ms": 30.752
+      }
+    ],
+    "errors": []
+  },
+  "after": {
+    "baseline": false,
+    "python": "3.10.11",
+    "tk": "8.6.12",
+    "pillow": "12.3.0",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "font": [
+      "Microsoft YaHei UI",
+      -15
+    ],
+    "scale": 1.0,
+    "window": "1150x800",
+    "warmup_excluded_from_heartbeat": true,
+    "cases": [
+      {
+        "name": "agent_40k_stream",
+        "wall_ms": 1025.515,
+        "heartbeat_max_ms": 22.474,
+        "heartbeat_p95_ms": 21.361,
+        "render_p95_ms": 7.88,
+        "render_max_ms": 7.88,
+        "final_ms": 2.694
+      },
+      {
+        "name": "contacts_200_avatars_False",
+        "wall_ms": 402.349,
+        "heartbeat_max_ms": 29.979,
+        "heartbeat_p95_ms": 27.287,
+        "resize_callback_max_ms": 0.045
+      },
+      {
+        "name": "contacts_200_labels_settle",
+        "wall_ms": 138.866,
+        "heartbeat_max_ms": 16.253,
+        "heartbeat_p95_ms": 16.253,
+        "labels_complete_ms": 128.135
+      },
+      {
+        "name": "contacts_200_avatars_True",
+        "wall_ms": 1148.514,
+        "heartbeat_max_ms": 32.225,
+        "heartbeat_p95_ms": 16.24,
+        "resize_callback_max_ms": 0.376
+      },
+      {
+        "name": "contacts_200_labels_settle",
+        "wall_ms": 143.063,
+        "heartbeat_max_ms": 15.742,
+        "heartbeat_p95_ms": 15.742,
+        "labels_complete_ms": 143.724
+      },
+      {
+        "name": "contacts_500_avatars_False",
+        "wall_ms": 1936.39,
+        "heartbeat_max_ms": 58.744,
+        "heartbeat_p95_ms": 14.947,
+        "resize_callback_max_ms": 0.122
+      },
+      {
+        "name": "contacts_500_labels_settle",
+        "wall_ms": 154.074,
+        "heartbeat_max_ms": 16.141,
+        "heartbeat_p95_ms": 16.141,
+        "labels_complete_ms": 142.56
+      },
+      {
+        "name": "timeline_100",
+        "wall_ms": 528.89,
+        "heartbeat_max_ms": 41.04,
+        "heartbeat_p95_ms": 37.834
+      },
+      {
+        "name": "timeline_300",
+        "wall_ms": 1169.28,
+        "heartbeat_max_ms": 32.633,
+        "heartbeat_p95_ms": 16.486
+      },
+      {
+        "name": "timeline_append_100",
+        "wall_ms": 434.903,
+        "heartbeat_max_ms": 21.33,
+        "heartbeat_p95_ms": 19.156,
+        "scroll_max_ms": 0.604
+      },
+      {
+        "name": "management_1000",
+        "wall_ms": 154.5,
+        "heartbeat_max_ms": 50.78,
+        "heartbeat_p95_ms": 50.78
+      }
+    ],
+    "source_ref": "working_tree",
+    "source_fingerprints": {
+      "wechat_archive/ui/message_widgets.py": "26cc13f34ccd5bfc9745a51f8b480accbec914964748634989d4ecd1c94263cc",
+      "wechat_archive/ui/agent_panel.py": "1c9ebfc93681898fca7620c84d0c2db54d3ad852110edeb4f5e6ced9d8c58594",
+      "wechat_archive/ui/rich_markdown.py": "245bcd7ebe5a22097edc17c380bb5f660f5f8326de62cc2c0fc2920da1fa8f25",
+      "wechat_archive/ui/browser_panel.py": "653de164f09da7136b098c6030a08db4c1412641e19c3d3b10fd2baff0ff5050"
+    },
+    "errors": []
+  },
+  "visual": {
+    "source_fingerprints": {
+      "wechat_archive/ui/account_labels.py": "99dc363671fdfd57ced69b75e55d784682791e7d1e58414f8eb61b4c80dee43d",
+      "wechat_archive/ui/action_feedback.py": "9d9fd70045b87df2b793924cb73ae9e1bea2222ca72c151d4344cc176b8329f5",
+      "wechat_archive/ui/agent_panel.py": "1c9ebfc93681898fca7620c84d0c2db54d3ad852110edeb4f5e6ced9d8c58594",
+      "wechat_archive/ui/application_controller.py": "dc27b71fb0cf102c95a80a6323a5682d01a0296e25ccb49498c7d32bf33c7d67",
+      "wechat_archive/ui/application_window.py": "c5e97eb569622f56667b9f9c675f7abe69e8be3ce83e29a354b3ad9b8e23cfda",
+      "wechat_archive/ui/app_logo.py": "b804857f143457fa1b5854ea35471d301f7dcbd7dcb6d6dcf2de3152e6d43158",
+      "wechat_archive/ui/avatar_service.py": "88542353ae5b9177fc9ee9d48bda8e7600ef20f3274fef07344f72229a7caf67",
+      "wechat_archive/ui/browser_panel.py": "653de164f09da7136b098c6030a08db4c1412641e19c3d3b10fd2baff0ff5050",
+      "wechat_archive/ui/browser_reads.py": "b6a1d137903a94d80da8916395155626c01fa5bf0874c037a80d4f5f928d25c8",
+      "wechat_archive/ui/codex_mark.py": "097799282800778be5a242ff96c5f31f406522583b04a4b039a61bd880f0cbdb",
+      "wechat_archive/ui/common_widgets.py": "de1c4ef5f7af310721e7a0292dc934320976d4ca9b16298961c9ced2a565a2b0",
+      "wechat_archive/ui/control_style.py": "eb602b3e353d04a0c4f26a2bfa819c0c9b0edfda7617a7f9934413536d2f0728",
+      "wechat_archive/ui/control_textures.py": "8f478b5c140b4f6fef53ef0b5f1f5a26a5121bbcfe4b80c325934faa5fdeb3da",
+      "wechat_archive/ui/copilot_panel.py": "35c4d94ba3a3ec29deb39f7a5c99483517adbbf95edd1963db64032ebfef5052",
+      "wechat_archive/ui/copilot_shell.py": "c32864e1e11c8099ac4fd41ad0298c6169c8baf299a3ee55b848dfcd1c0a69e6",
+      "wechat_archive/ui/forward_image_service.py": "a12101c755c6c9d193a42c9715681812da2a503c7444cb85c1be552ea628a6ed",
+      "wechat_archive/ui/forward_message.py": "a03c8300a42ce5c7bfac87d9e783ceadfb2a13f7941e080bf825718aa4295f1d",
+      "wechat_archive/ui/forward_release_check.py": "d12d6435b892b78ba74b49a0a5b26807d9f4bf5dad161a9c862971941c97344d",
+      "wechat_archive/ui/help_content.py": "99c7cf01e2eac56bf5e4495cbfc6de9d20465086ea22faa6c0c26f7d87cc1912",
+      "wechat_archive/ui/help_panel.py": "3390e996f583ba6ad56b2afd013164cd2aef989261867eb044ad73574a86793f",
+      "wechat_archive/ui/history_panel.py": "7760c809382d4f7b569e1cfd37cfcd32ac1d19624ea43c213365257f8ffbb712",
+      "wechat_archive/ui/icon_button.py": "e7ea6dcff2a819793a5ce85ac7527c03e62ccaf8ef15bbad914e42a2b69e6963",
+      "wechat_archive/ui/import_controller.py": "964aacb80e11353ec61179571536966985055c01db5ac9ae20466d8e77e16bc1",
+      "wechat_archive/ui/import_window.py": "742be0e0bff42fbd796476fe39610f5ed7763449eeee5ade35e1d62cf8b219b4",
+      "wechat_archive/ui/inline_emojis.py": "9a19557ef747928dacefda74d4b8179502408a25e8cc760df8d8dc6c0cbfdbcb",
+      "wechat_archive/ui/knowledge_panel.py": "8671f091363dcc43c859380ac14eca87b580c5388336f638d0ab71f547d234c4",
+      "wechat_archive/ui/large_release_check.py": "c50ee1291e8fc43cff2f248b38b77d239407d27d9051a9b4cabbd176969dff24",
+      "wechat_archive/ui/layout_config.py": "1c13fbb6e88e4274537f2a4cf300391a0339753c65843c39732446a814467943",
+      "wechat_archive/ui/localization.py": "0f774a4475a8aeaef0282d8352f00b5f969c0bca92db97cdcd0b754d5b5d3a85",
+      "wechat_archive/ui/mbti_panel.py": "6f84cc150f5f27d79d91e20ada9b29bb315b70e945a3335348938d23d47a2997",
+      "wechat_archive/ui/mbti_release_check.py": "91271136de472cd41451f02a2638ef0a8508b23e387ef8212efe50f7a0b7b5d3",
+      "wechat_archive/ui/mbti_resources_panel.py": "29583674926d283c314f3488134a0d3549a61316b4498ba607ca662a1779e56d",
+      "wechat_archive/ui/media_widgets.py": "6d5372ceb949b61574c38cbff64508147d7738a3f6e585b4b3550e4b59fa220f",
+      "wechat_archive/ui/memory_release_check.py": "a7b07710f329d9ed3c06382d87a98156a482a400a1c43aa063de71a2d2b20ca6",
+      "wechat_archive/ui/message_widgets.py": "26cc13f34ccd5bfc9745a51f8b480accbec914964748634989d4ecd1c94263cc",
+      "wechat_archive/ui/model_controls.py": "c841e19ab9d70a5181a0a5c4a5914b12087de52837f0b1b8eae4e6450d64203b",
+      "wechat_archive/ui/navigation_feedback.py": "c84ee0034f8cab1cbe1a64d8753f44875d4259c770b9d67243d65b031f3201b6",
+      "wechat_archive/ui/operation_actions.py": "d1c81f567bd823a971e08baf7bf3d8f1fff1a0e019b7f2f8db9f93e03886600f",
+      "wechat_archive/ui/operation_panels.py": "433b7e5225df2e3aff3c88c1d9b9e4296a3cedbfdd570f70abfdb5d8ef66e671",
+      "wechat_archive/ui/parameter_picker.py": "9848ed74883aedf429503756e72691898fb01c1e5639013c73febf170b8a442d",
+      "wechat_archive/ui/patch_release_check.py": "0900ea43a1306fb5db36ca32dc5225a9377c06787ed6480834d38b72a8a6e7f6",
+      "wechat_archive/ui/power_popover.py": "626739481e4fa20afa71ade454ebe056eca4147c0370fb6f6f82262dacd6ec09",
+      "wechat_archive/ui/read_cache.py": "26565168e9604adb5d87e1dd6e38666a9e7aa90998d16a792ea42654ee124749",
+      "wechat_archive/ui/release_check.py": "45dacc6998bef56de56ef2529c45d25fad8ff5a43de19fabf6ef79f7c1459cc1",
+      "wechat_archive/ui/resize_release_check.py": "15c34c2d3044f9a791f68b7c09455312e33fd23a8c25971c528111d4781a10b9",
+      "wechat_archive/ui/resize_viewport.py": "884ef95f70d028d7c02e00f664d5b344846b4ebeea452497f7bfac2510fde54b",
+      "wechat_archive/ui/rich_markdown.py": "245bcd7ebe5a22097edc17c380bb5f660f5f8326de62cc2c0fc2920da1fa8f25",
+      "wechat_archive/ui/rounded.py": "db74800cf452d60082ceb3e689ef823f98b1ce20081c15d735dddc0b6a2f0099",
+      "wechat_archive/ui/scope_dialog.py": "aee5cdc4fffcea8b432d8bb422808dab063304a481001473d8f19c1bb5998624",
+      "wechat_archive/ui/scrolling.py": "094a21614c380c9b24e6206408914a1b9d14ca1eba64d4fc363e21e6100382cb",
+      "wechat_archive/ui/search_entry.py": "9767b3d00aafa7c9c8ff755e4894b4b261a183f9b192cd4059a2bdf01f4a0560",
+      "wechat_archive/ui/settings_panel.py": "13620cf2c38fd4e468f7bd0e9a97c3799e87247880db1056a0b2e57b20cf37ca",
+      "wechat_archive/ui/slim_scrollbar.py": "a05d32f817eef2803c684467e0d962dd0aeb738ee768f351312cd6ca2656dfca",
+      "wechat_archive/ui/source_options.py": "c1ba1894972b45caca9651a4ce237b7c38fff0c7b1a8b0588097ab44af3f629c",
+      "wechat_archive/ui/source_tree.py": "af8c76994ae65e4cb9a30c7f424d65ce9b51c3559459941d0857a158da97ff51",
+      "wechat_archive/ui/split_controls.py": "e88c1176b1f1e38801ce4fc3c35571e6f1c50aab52666c330d1e361a2abfdfa5",
+      "wechat_archive/ui/statistics_panel.py": "48f7ec72a2fb08a8f9f30c40579ce96958ffc58d2721990e6d4aaf575a6245a5",
+      "wechat_archive/ui/symbol_actions.py": "b02ee1530cac542cee580192ee121299fe575a612a5723d6b57d94f6fbbea2c8",
+      "wechat_archive/ui/task_status.py": "1904cd9ab03aef5e4f7c2e4e624193fdefb60442f7a61c97c7cce913f8acf695",
+      "wechat_archive/ui/theme.py": "178bd426307be5218b85049cb05f6e783cfef0d1d1aa925a55cde559264bfbbc",
+      "wechat_archive/ui/thumbnail_service.py": "7af688cb64d51e0c34b7695adc350ed2c5a66a182e84c6f56efa6e1737f2feca",
+      "wechat_archive/ui/toolbox_panel.py": "31699f7450585e47eec67675464c2b1bc062e2ca89318138d0b92eb9b938c312",
+      "wechat_archive/ui/user_preferences.py": "5a83cdaed0208a0f648edc77e608e905bec32589656b28b99e96fea7a289e6fd",
+      "wechat_archive/ui/v11_release_check.py": "a37453661b1d11dbd7cb665a5ecd8830d2e3186e151ffb3be315d31a949d53e7",
+      "wechat_archive/ui/v1_release_check.py": "abb3c7a747a8790331fc1f5bfa7e2763c11862704e759127e10a0c5f7b755675",
+      "wechat_archive/ui/v2_release_check.py": "a8de342e4c7d11d371904e145f2abcb63aa7b73c5750064a3b3f1cd9fcc4cf45",
+      "wechat_archive/ui/workspace_release_check.py": "68ecc46eeec37b02835cece25352d1c44bd06be11819325fc9ca55b6dbbee2ec",
+      "wechat_archive/ui/workspace_widgets.py": "61dc4cdf70abd0fc8c566e87c43a87bcd01990c12242c813058fea3e33a70072",
+      "wechat_archive/ui/__init__.py": "b8bee43f42b2b1a16c81019c2e739f5a677761f78c9d42a6ca3cbe92e375feee"
+    },
+    "synthetic_contacts": 500,
+    "loaded_messages": 300,
+    "contacts_virtualized": true,
+    "mapped_contacts": 7,
+    "indexed_messages": 300,
+    "window": [
+      900,
+      680
+    ],
+    "drag_window": [
+      1240,
+      820
+    ],
+    "ui_font": [
+      "Microsoft YaHei UI",
+      -15
+    ],
+    "ui_scale": 1.0,
+    "contact_document_height": 37500,
+    "contact_native_body_height": 1113,
+    "timeline_document_height": 33409,
+    "timeline_native_body_height": 1011,
+    "callback_errors": [],
+    "drag_steps": 41,
+    "drag_python_max_ms": 0.242,
+    "drag_heartbeat_max_ms": 90.95,
+    "drag_heartbeat_p95_ms": 89.743,
+    "screenshots": [
+      "visual_light_v10.png",
+      "visual_after_drag_v10.png",
+      "visual_dark_tail_v10.png",
+      "visual_narrow_v10.png"
+    ]
+  },
+  "full_regression": {
+    "run": 961,
+    "seconds": 946.041,
+    "skipped": 0,
+    "native_destroy_diagnostics": 0
+  },
+  "management_suite": {
+    "run": 33,
+    "seconds": 4.467,
+    "skipped": 0,
+    "native_destroy_diagnostics": 0
+  },
+  "build": {
+    "version": "2.2.3",
+    "exe_sha256": "3db3f6a0def7ab6fd60c2460a03d4583da95bda98f55b48c9fc898b139222293",
+    "source_files": 186,
+    "source_unchanged": true,
+    "checks": [
+      {
+        "check": "desktop",
+        "exit_code": 0,
+        "seconds": 1.13,
+        "receipts": [
+          "build\\ul18ev0\\desktop_check.json"
+        ]
+      },
+      {
+        "check": "codex",
+        "exit_code": 0,
+        "seconds": 1.598,
+        "receipts": [
+          "build\\ul18ev1\\codex_check.json"
+        ]
+      },
+      {
+        "check": "knowledge",
+        "exit_code": 0,
+        "seconds": 2.794,
+        "receipts": [
+          "build\\ul18ev2\\knowledge_check.json"
+        ]
+      },
+      {
+        "check": "sixu",
+        "exit_code": 0,
+        "seconds": 9.286,
+        "receipts": [
+          "build\\ul18ev3\\sixu_v1_check.json"
+        ]
+      },
+      {
+        "check": "workbench",
+        "exit_code": 0,
+        "seconds": 10.637,
+        "receipts": [
+          "build\\ul18ev4\\workbench_check.json"
+        ]
+      }
+    ]
+  },
+  "phase_commits": {
+    "A": "05145ef3588a398132303b05289872ee704b1fa6",
+    "B": "e7a75f3223e97f25fd67eccb916e471009749a1d"
+  },
+  "staged_tree_tests": {
+    "A": {
+      "phase": "A",
+      "exit_code": 0,
+      "seconds": 14.745,
+      "patterns": [
+        "test_ui_lag_streaming.py",
+        "test_client_streaming.py"
+      ],
+      "snapshot": "C:\\Users\\Lenovo\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an\\outputs\\wechat_archive\\build\\ix18a",
+      "index_tree": "1b7ae798be557c469a4b028bb5420ea61dc5b3a3"
+    },
+    "B": {
+      "phase": "B",
+      "exit_code": 0,
+      "seconds": 55.801,
+      "patterns": [
+        "test_ui_lag_contacts.py",
+        "test_release_210.py",
+        "test_release_211.py"
+      ],
+      "snapshot": "C:\\Users\\Lenovo\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an\\outputs\\wechat_archive\\build\\ix18b",
+      "index_tree": "fe6b73518a7f0db816dc01801a52700d5bcf6516"
+    }
+  },
+  "checks": {
+    "A": {
+      "render_p95_le_30": true,
+      "heartbeat_le_60": true,
+      "final_le_100": true
+    },
+    "B": {
+      "200_False_wall": true,
+      "200_False_heartbeat": true,
+      "200_True_wall": true,
+      "200_True_heartbeat": true,
+      "500_False_wall": true,
+      "500_False_heartbeat": true,
+      "resize_callback_le_8": true,
+      "labels_complete_le_150": true
+    },
+    "C": {
+      "timeline_100_wall": true,
+      "timeline_100_heartbeat": false,
+      "timeline_300_wall": true,
+      "timeline_300_heartbeat": true,
+      "timeline_append_100_wall": true,
+      "timeline_append_100_heartbeat": true,
+      "scroll_le_5": true
+    },
+    "D": {
+      "management_heartbeat_le_50": false
+    }
+  },
+  "phase_goals_passed": {
+    "A": true,
+    "B": true,
+    "C": false,
+    "D": false
+  },
+  "whitespace_equivalence": {
+    "path": "wechat_archive/ui/avatar_service.py",
+    "old_sha256": "88542353ae5b9177fc9ee9d48bda8e7600ef20f3274fef07344f72229a7caf67",
+    "new_sha256": "722c42b9cae8fe91896b87cebea713d7622d1f852dfaf5cd2e2296170e70d5b0",
+    "compiled_code_identical": true,
+    "compiled_sha256": "a76848f3ef85ebf093690dc6dd561d9a8d2bf2d4cc028a664ef33048c1910ff0"
+  },
+  "overall_smoothness_gate": "not passed; continuous drag peaks remain"
+}

@@ -19,6 +19,7 @@ class ForwardMessage(tk.Frame):
         self.preview=tk.Label(self,text='\n'.join(x['name']+'：'+x['text'].replace('\n',' ')[:80] for x in self.records[:2]),font=self.theme.small,background=p['PAPER'],foreground=p['SECONDARY'],anchor='w',justify='left',wraplength=u(350))
         self.preview._raw_text=True;self.preview.pack(fill='x',pady=(u(7),0))
         self.body=tk.Frame(self,background=p['PAPER']);self.actions=ttk.Frame(self)
+        self.body.bind('<Configure>',lambda _:self.schedule_fit(),add='+')
         self.more=ttk.Button(self.actions,text='再显示20条',command=self.more_records,style='Quiet.TButton');self.more.pack(side='left')
         self.fold=ttk.Button(self.actions,text='收起记录',command=self.collapse,style='Quiet.TButton');self.fold.pack(side='right')
         self.count=tk.Label(self,background=p['PAPER'],foreground=p['SECONDARY'],font=self.theme.small,anchor='w')
@@ -29,11 +30,15 @@ class ForwardMessage(tk.Frame):
         self.bind('<Configure>',self.schedule_fit,add='+');self.bind('<Map>',lambda _:self.schedule_fit(),add='+');self.bind('<Destroy>',self.destroyed,add='+')
         timeline.theme.apply_tree(self);timeline.theme.wheel_router.attach(self)
 
+    def timeline_y(self):
+        value=self.timeline.bubbles.get(self.row.get('id'),{})
+        return value.get('_virtual_y',self.master.winfo_y())
+
     def changed(self,folding=False):
         view=self.timeline
         if not hasattr(view,'pending_top'):
             top=max(0,view.canvas.canvasy(0))
-            view.pending_top=min(top,self.master.winfo_y()) if folding else top
+            view.pending_top=min(top,self.timeline_y()) if folding else top
         view.thumbnail_ready()
 
     def toggle(self):
@@ -139,15 +144,20 @@ class ForwardMessage(tk.Frame):
         return frame,label,text
 
     def update_visible(self,schedule=True):
-        if not self.expanded:return
+        if not self.expanded or not self.winfo_viewable():return
         view=self.timeline
         if not view.canvas.winfo_ismapped() or view.app.current_page!='聊天归档':return
         u=self.theme.u;top=view.canvas.canvasy(0)-u(80);bottom=top+view.canvas.winfo_height()+u(160)
-        origin=self.master.winfo_y()+self.winfo_y()+self.body.winfo_y()
+        origin=self.timeline_y()+self.winfo_y()+self.body.winfo_y()
         width=max(u(100),self.winfo_width()-(2*u(1)+2*u(12)+2*u(10)))
         key=(width,self.theme.body,self.theme.generation);needs=False
+        self.geometry_pending=False
+        control_top=origin
+        control_bottom=origin+max(self.body.winfo_height(),self.body.winfo_reqheight())
         for index,(frame,label,text) in enumerate(self.rendered):
-            if frame.winfo_width()<20 or frame.winfo_height()<=1:continue
+            if frame.winfo_width()<20 or frame.winfo_height()<=1:
+                if control_bottom>top and control_top<bottom:self.geometry_pending=True
+                continue
             first=origin+frame.winfo_y();last=first+max(frame.winfo_height(),frame.winfo_reqheight())
             visible=last>top and first<bottom
             if visible:
@@ -163,17 +173,19 @@ class ForwardMessage(tk.Frame):
                 label.pack_forget();frame._text_holder.pack_forget()
                 if getattr(frame,'_media_frame',None):frame._media_frame.pack_forget()
                 frame._forward_virtual=True
-        if needs and schedule and not self.resize_job:self.schedule_fit()
+        if (needs or self.geometry_pending) and schedule and not self.resize_job:self.schedule_fit()
 
     def fit(self):
         self.resize_job=None;u=self.theme.u;width=max(u(100),self.winfo_width()-u(30))
         if getattr(self,'preview_key',None)!=(width,self.theme.small):
             self.preview.configure(wraplength=width,font=self.theme.small);self.preview_key=(width,self.theme.small)
         if not self.expanded:return
-        if not self.timeline.canvas.winfo_ismapped() or self.timeline.app.current_page!='聊天归档':
+        if not self.winfo_viewable() or not self.timeline.canvas.winfo_ismapped() or self.timeline.app.current_page!='聊天归档':
             self.needs_fit=True;return
         if not self.winfo_exists() or not self.expanded:return
         self.needs_fit=False;self.update_visible(schedule=False)
+        if self.geometry_pending:
+            self.resize_job=self.after(16,self.fit);return
         expected=max(u(100),self.winfo_width()-(2*u(1)+2*u(12)+2*u(10)))
         key=(expected,self.theme.body,self.theme.generation)
         started=time.perf_counter();pending=False;changed=False

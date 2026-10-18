@@ -177,6 +177,7 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
             selected=self.tools_notebook.select()
             route=next((key for key,(notebook,tab) in self.tab_routes.items() if notebook is self.tools_notebook and str(tab)==selected),None)
             self.toolbox_panel.activate(route)
+            if route=='数据管理':self.refresh_management_messages()
         else:self.toolbox_panel.activate(None)
         if primary=='统计':self.statistics_panel.refresh()
         if name=='Codex 助手':self.open_copilot(False)
@@ -330,6 +331,7 @@ class ApplicationWindow(SettingsMixin,CopilotShell,BrowserMixin,OperationPanels,
         if hasattr(self,'forward_image_service'):self.forward_image_service.close()
         if hasattr(self,'thumbnail_service'):self.thumbnail_service.close()
         self.browser_reads.close()
+        if getattr(self,'management_job',None):self.root.after_cancel(self.management_job);self.management_job=None
         self.navigation_feedback.close()
         if hasattr(self,'statistics_panel'):self.statistics_panel.close()
         self.closed=True;self.root.after_cancel(self.theme_poll_job);self.agent_panel.close();self.knowledge_panel.close();self.root.after_cancel(self.poll_job)
